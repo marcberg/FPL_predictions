@@ -15,6 +15,7 @@ def get_game_list(season=None):
         return gamelist
     else:
         fdr_data = get_fdr()
+        fdr_data.set_index('id', inplace=True)
         shorts = fdr_data['short_name']
         
         url = "https://fantasy.premierleague.com/api/fixtures/"

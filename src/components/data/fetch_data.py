@@ -29,7 +29,8 @@ def fetch_data(fetching_function, current_season=fetch_current_season, previous_
 if __name__=="__main__":
     fetch_data(get_game_list)
     fetch_data(get_player_details)
-    fetch_data(get_player_hist)
+    fetch_data(get_player_hist, season_specific=False)
+    fetch_data(get_player_info)
     fetch_data(get_player_id, season_specific=False)
     fetch_data(get_player_name, season_specific=False)
     fetch_data(get_round_info)

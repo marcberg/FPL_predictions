@@ -4,3 +4,6 @@ numpy
 scikit-learn
 matplotlib
 requests
+seaborn
+catboost
+xgboost

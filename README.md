@@ -2,7 +2,7 @@
 
 ## Enviroment & libraries
 
-In cmd 
+Setup enviroment
 
 ```
 conda create -p venv python==3.10 -y
@@ -10,9 +10,10 @@ conda create -p venv python==3.10 -y
 conda activate venv/
 ```
 
-in powershell 
+Install packages needed
 
 ```
 pip install -r requirements.txt
-´´´
+```
+
 

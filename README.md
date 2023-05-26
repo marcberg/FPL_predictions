@@ -16,4 +16,12 @@ Install packages needed
 pip install -r requirements.txt
 ```
 
+## Folder structure
 
+
+## Things to add
+
+- Mlflow
+- Docker
+- Structured way of building features
+- train final models in .py-file

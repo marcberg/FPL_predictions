@@ -8,6 +8,9 @@ Setup enviroment
 conda create -p venv python==3.10 -y
 
 conda activate venv/
+
+conda install ipykernel -y
+
 ```
 
 Install packages needed

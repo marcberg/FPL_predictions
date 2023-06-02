@@ -5,5 +5,5 @@ scikit-learn
 matplotlib
 requests
 seaborn
-catboost
 xgboost
+dill

@@ -31,6 +31,7 @@ class DataConfig:
     train_data_path: str=os.path.join('artifacts',"train.csv")
     test_data_path: str=os.path.join('artifacts',"test.csv")
     val_data_path: str=os.path.join('artifacts',"validation.csv")
+    score_data_path: str=os.path.join('artifacts',"score.csv")
 
 class DataIngest():
 
@@ -43,17 +44,19 @@ class DataIngest():
         
         #os.makedirs(os.path.dirname(self.ingestion_config.train_data_path), exist_ok=True)
 
-        train_set, test_set=train_test_split(df,test_size=0.4,random_state=42)
+        train_set, test_set=train_test_split(df.loc[df.train_score == "train"],test_size=0.4,random_state=42)
         test_set, val_set=train_test_split(test_set,test_size=0.5,random_state=42)
 
         train_set.to_csv(self.config.train_data_path,index=False,header=True)
         test_set.to_csv(self.config.test_data_path,index=False,header=True)
         val_set.to_csv(self.config.val_data_path,index=False,header=True)
+        df.loc[df.train_score == "score"].to_csv(self.config.score_data_path,index=False,header=True)
 
         return(
             self.config.train_data_path,
             self.config.test_data_path,
-            self.config.val_data_path
+            self.config.val_data_path,
+            self.config.score_data_path
         )
     
 
@@ -231,7 +234,7 @@ class DataTranformTrain():
     
 if __name__=='__main__':
     obj=DataIngest()
-    train_data,test_data,val_data=obj.create_train_and_test()
+    train_data,test_data,val_data,score_data=obj.create_train_and_test()
 
     TransformTrain = DataTranformTrain(label = 'label_1', drop_labels_list = ['label_1', 'label_X', 'label_2'], perform_cross_validation=True)
     algo_best_model_metric, algo_best_param, algo_best_model = TransformTrain.grid_search()

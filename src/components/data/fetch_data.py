@@ -1,8 +1,8 @@
 import pandas as pd
 
-from api.game_functions import get_game_list
-from api.player_functions import get_player_details, get_player_info, get_player_hist, get_player_id, get_player_name
-from api.round_functions import get_round_info
+from src.components.data.api.game_functions import get_game_list
+from src.components.data.api.player_functions import get_player_details, get_player_info, get_player_hist, get_player_id, get_player_name
+from src.components.data.api.round_functions import get_round_info
 
 game_list = get_game_list()
 
@@ -23,7 +23,7 @@ def fetch_data(fetching_function, current_season=fetch_current_season, previous_
             season_data_i['season_start_year'] = int(i)
             season_data = pd.concat([season_data, season_data_i])
         
-    season_data.to_csv('../../../artifacts/fetched_data/' + fetching_function.__name__ + '.csv', index=False)
+    season_data.to_csv('artifacts/fetched_data/' + fetching_function.__name__ + '.csv', index=False)
     print('data/' + fetching_function.__name__ + '.csv is fetched.')
 
 if __name__=="__main__":

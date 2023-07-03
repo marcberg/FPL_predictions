@@ -36,10 +36,11 @@ src
 
 ## To do-list
 
-- Improve the training-part and save results from grid search.
-- Add more features
+- Improve the training-part.
+- Save results from grid search.
+- Add more features.
 
-## How to run all project as-is 2023-06-29 (to be put in pipeline)
+## How to run all project as-is 2023-07-03 (to be put in pipeline)
 
 1. Fetch data from API - src/compontents/data/fetch_data.py
 2. Create data for ML - src/compontents/data/transform_data.py

@@ -188,11 +188,14 @@ class DataTranformTrain():
             ])
 
             if self.perform_cross_validation:
-                grid = GridSearchCV(estimator = pipeline, param_grid = param, cv = 3, n_jobs = -1, scoring = 'roc_auc', error_score="raise")
+                grid = GridSearchCV(estimator = pipeline, param_grid = param, cv = 3, n_jobs = -1, scoring = 'roc_auc', error_score="raise", return_train_score=True)
             else:
-                grid = GridSearchCV(estimator = pipeline, param_grid = param, cv = cv, scoring = 'roc_auc', error_score="raise")
+                grid = GridSearchCV(estimator = pipeline, param_grid = param, cv = cv, scoring = 'roc_auc', error_score="raise", return_train_score=True)
 
             grid.fit(X, y)
+
+            cv_results = pd.DataFrame(grid.cv_results_).sort_values(by=["rank_test_score"],ascending=False).reset_index(drop=True)
+            cv_results.to_excel('artifacts/ml_results/{0}/{1} - Grid.xlsx'.format(self.label, list(models.keys())[i]), index=False)
 
             bp = grid.best_params_
             nbp = {}
@@ -216,7 +219,9 @@ class DataTranformTrain():
                                         threshold=0.5,
                                         model_name=list(models.keys())[i]
                                         )
-            
+            metric_long = metric.melt(id_vars=['Algorithm'], var_name='Metric', value_name='Metric value')
+            metric_long.to_excel('artifacts/ml_results/{0}/{1} - Metrics.xlsx'.format(self.label, list(models.keys())[i]), index=False)
+
             model_list.append(list(models.keys())[i])
             AUC_ROC_list.append(metric['AUC-ROC Val'][0])
 
@@ -225,6 +230,7 @@ class DataTranformTrain():
             algo_best_model.append((list(models.keys())[i], final_pipeline))
 
         algo_best_model_metric = pd.DataFrame(list(zip(model_list, AUC_ROC_list)), columns=['Model Name', 'AUC_ROC']).sort_values(by=["AUC_ROC"],ascending=False).reset_index(drop=True)
+        algo_best_model_metric.to_excel('artifacts/ml_results/{0}/algo_performance.xlsx'.format(self.label), index=False)
 
         return (
             algo_best_model_metric, 

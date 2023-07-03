@@ -37,7 +37,6 @@ src
 ## To do-list
 
 - Improve the training-part.
-- Save results from grid search.
 - Add more features.
 
 ## How to run all project as-is 2023-07-03 (to be put in pipeline)

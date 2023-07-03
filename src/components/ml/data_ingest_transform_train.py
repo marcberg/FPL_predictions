@@ -23,7 +23,7 @@ import xgboost as xgb # xgb.XGBClassifier
 src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(src_path)
 
-from src.utils import save_object, evaluate_model_kpi
+from src.components.ml.metrics import evaluate_model_kpi
 
 @dataclass
 class DataConfig:

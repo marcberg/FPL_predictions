@@ -9,6 +9,7 @@ def games_base():
     games = pd.read_csv(os.getcwd() + "/artifacts/fetched_data/get_game_list.csv")
 
     games['kickoff'] = pd.to_datetime(games['kickoff'])
+    games['kickoff_date'] = games['kickoff'].dt.date
     games['kickoff_year'] = games['kickoff'].dt.year
     games['kickoff_month'] = games['kickoff'].dt.month
     games['rounds_left'] = 38-games['GW']
@@ -20,6 +21,7 @@ def games_base():
     games_base = games[[
         # id
         'season_start_year', 
+        'kickoff_date',
         'GW', 
         'id', 
         'team_h', 

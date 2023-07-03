@@ -36,8 +36,10 @@ src
 
 ## To do-list
 
+- Export each algos feature importance
 - Improve the training-part.
 - Add more features.
+    - Player-data
 
 ## How to run all project as-is 2023-07-03 (to be put in pipeline)
 

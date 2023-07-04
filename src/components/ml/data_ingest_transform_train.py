@@ -1,6 +1,5 @@
 import os
 import sys
-import pandas as pd
 
 from dataclasses import dataclass
 
@@ -111,28 +110,29 @@ class DataTranformTrain():
 
         params = {
             "Decision Tree": {
-                'model__criterion':['log_loss', 'entropy', 'gini'],
-                'model__max_depth': [3, 5, 8, 10, 20],
+                #'model__criterion':['log_loss', 'entropy', 'gini'],
+                'model__max_depth': [3, 5, 8, 12],
                 # 'model__splitter':['best','random'],
                 # 'model__max_features':['sqrt','log2'],
             },
             "Random Forest":{
                 'model__bootstrap': [True],
-                'model__max_depth': [3, 5, 8, 10, 20],
-                #'model__max_features': [2, 3, 5, 10, 20],
+                'model__max_depth': [3, 5, 8, 12],
+                'model__max_features': [10, 20, 50],
                 #'model__min_samples_leaf': [3, 4, 5, 10, 20],
-                #'model__n_estimators': [10, 50, 100]
+                'model__n_estimators': [50, 100, 500],
             },
             "Gradient Boosting":{
                 "model__loss":["log_loss"],
-                "model__learning_rate": [0.01, 0.05, 0.1, 0.2, 0.5],
+                'model__learning_rate': [0.01, 0.05, 0.1, 0.2, 0.5],
                 #"model__min_samples_split": np.linspace(0.1, 0.5, 12),
                 #"model__min_samples_leaf": np.linspace(0.1, 0.5, 12),
-                "model__max_depth":[3,5,8,10,15],
+                "model__min_samples_leaf": np.linspace(5, 10, 20, 50),
+                'model__max_depth': [3, 5, 8, 12],
                 #"model__max_features":["log2", "sqrt"],
                 #"model__criterion": ["friedman_mse",  "mae"],
                 #"model__subsample":[0.5, 0.618, 0.8, 1.0],
-                #"model__n_estimators": [10, 15, 20]
+                'model__n_estimators': [50, 100, 500],
             },
             "Logistic Regression":{
                 'model__C': [0.001, 0.01, 0.1, 1, 10, 100, 1000],
@@ -141,10 +141,10 @@ class DataTranformTrain():
                 #'solver': ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'],
             },
             "XGBoost":{
-                'model__max_depth': [3, 4, 5, 6, 7, 8],
-                'model__learning_rate': [0.01, 0.05], #, 0.1, 0.2, 0.5],
-                #"model__gamma":[0.5, 1], #, 2],
-                #'model__n_estimators': [50, 100], #, 200],
+                'model__max_depth': [3, 5, 8, 12],
+                'model__learning_rate': [0.01, 0.05, 0.1, 0.2, 0.5],
+                "model__gamma":[0.5, 1, 2],
+                'model__n_estimators': [50, 100, 500],
             },     
         }
 
@@ -228,6 +228,26 @@ class DataTranformTrain():
             algo_best_param[list(models.keys())[i]] = nbp
 
             algo_best_model.append((list(models.keys())[i], final_pipeline))
+
+            # Feature importance
+            feature_names = final_pipeline.named_steps['preprocessing'].get_feature_names_out()
+            if list(models.keys())[i] == "Logistic Regression":
+                coefficients = final_pipeline.named_steps['model'].coef_[0]
+                fi = pd.DataFrame({
+                    'Feature': feature_names,
+                    'Coefficients': coefficients,
+                    'Abs coefficients': np.abs(coefficients)
+                })
+                fi = fi.sort_values('Abs coefficients', ascending=False).reset_index(drop=True)
+            else:
+                feature_importance = final_pipeline.named_steps['model'].feature_importances_
+                fi = pd.DataFrame({
+                    'Feature': feature_names,
+                    'Feature importance': feature_importance,
+                })
+                fi = fi.sort_values('Feature importance', ascending=False).reset_index(drop=True)
+            fi.to_excel('artifacts/ml_results/{0}/{1} - Feature importance.xlsx'.format(self.label, list(models.keys())[i]), index=False)
+
 
         algo_best_model_metric = pd.DataFrame(list(zip(model_list, AUC_ROC_list)), columns=['Model Name', 'AUC_ROC']).sort_values(by=["AUC_ROC"],ascending=False).reset_index(drop=True)
         algo_best_model_metric.to_excel('artifacts/ml_results/{0}/algo_performance.xlsx'.format(self.label), index=False)

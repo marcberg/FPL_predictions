@@ -198,7 +198,7 @@ class DataTranformTrain():
 
             grid.fit(X, y)
 
-            cv_results = pd.DataFrame(grid.cv_results_).sort_values(by=["rank_test_score"],ascending=False).reset_index(drop=True)
+            cv_results = pd.DataFrame(grid.cv_results_).sort_values(by=["rank_test_score"],ascending=True).reset_index(drop=True)
             cv_results.to_excel('artifacts/ml_results/{0}/{1} - Grid.xlsx'.format(self.label, list(models.keys())[i]), index=False)
 
             bp = grid.best_params_

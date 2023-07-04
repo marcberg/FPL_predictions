@@ -55,3 +55,5 @@ or run "main.py"
 - Mlflow
 - Docker
 - Automate
+    - airflow? but then I can't turn of my computer.
+    - github actions? 

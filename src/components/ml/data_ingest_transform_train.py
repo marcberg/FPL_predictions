@@ -127,7 +127,7 @@ class DataTranformTrain():
                 'model__learning_rate': [0.01, 0.05, 0.1, 0.2, 0.5],
                 #"model__min_samples_split": np.linspace(0.1, 0.5, 12),
                 #"model__min_samples_leaf": np.linspace(0.1, 0.5, 12),
-                "model__min_samples_leaf": np.linspace(5, 10, 20, 50),
+                "model__min_samples_leaf": [5, 10, 20, 50],
                 'model__max_depth': [3, 5, 8, 12],
                 #"model__max_features":["log2", "sqrt"],
                 #"model__criterion": ["friedman_mse",  "mae"],
@@ -152,7 +152,11 @@ class DataTranformTrain():
 
 
     def grid_search(self):
-        
+        '''
+        todo:
+        - add optional print 
+        - extract feature importance to own functions
+        '''
         models, params = self.algorithms_and_grid()
 
         train_df=pd.read_csv(self.config.train_data_path)

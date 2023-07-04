@@ -19,8 +19,8 @@ def evaluate_model_kpi(model, X_train, y_train, X_val, y_val, threshold=0.5, mod
     accuracy_val = accuracy_score(y_val, y_val_pred)
     
     # Calculate precision, recall, and f1 score
-    prf_train = precision_recall_fscore_support(y_train, y_train_pred, average=None)
-    prf_val = precision_recall_fscore_support(y_val, y_val_pred, average=None)
+    prf_train = precision_recall_fscore_support(y_train, y_train_pred, average=None, zero_division=1)
+    prf_val = precision_recall_fscore_support(y_val, y_val_pred, average=None, zero_division=1)
     
     # Calculate area under the curve
     auc_train = roc_auc_score(y_train, y_train_prob)

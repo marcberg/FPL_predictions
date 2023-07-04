@@ -36,10 +36,11 @@ src
 
 ## To do-list
 
-- Export each algos feature importance
 - Improve the training-part.
 - Add more features.
     - Player-data
+- validate that tbl-features are correct.
+- overtraining alot
 
 ## How to run all project as-is 2023-07-03 (to be put in pipeline)
 
@@ -48,7 +49,7 @@ src
 3. Split data into train, test, val and score. Train model with hyperparameter tuning - src/compontents/ml/data_ingest_transform_train.py
 4. Score - src/compontents/ml/score.py
 
-or run "main.py"
+or run "main.py"/"main.ipynb"
 
 ## To be added
 

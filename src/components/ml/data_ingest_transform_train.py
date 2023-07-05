@@ -5,12 +5,18 @@ from dataclasses import dataclass
 
 import numpy as np 
 import pandas as pd
+import mlflow
+import logging
+logging.getLogger("mlflow").setLevel(logging.ERROR)
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="_distutils_hack")
 
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder,StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.model_selection import GridSearchCV
 
 from sklearn.tree import DecisionTreeClassifier
@@ -21,6 +27,7 @@ import xgboost as xgb # xgb.XGBClassifier
 
 src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(src_path)
+
 
 from src.components.ml.metrics import evaluate_model_kpi
 
@@ -182,6 +189,7 @@ class DataTranformTrain():
         algo_best_param = {}
         algo_best_model = []
 
+        mlflow.set_experiment(self.label)
         for i in range(len(list(models))):
             model = list(models.values())[i]
             param = list(params.values())[i]
@@ -206,12 +214,11 @@ class DataTranformTrain():
             for k, v in bp.items():
                 nbp[k[k.index('__')+2:]] = v
 
+
             final_pipeline = Pipeline([
                 ('preprocessing', preprocessor),
                 ('model', model.set_params(**nbp))
             ])
-
-
             final_pipeline.fit(X.iloc[indices_train], y.iloc[indices_train])
             
             # Evaluate Train and Validation dataset
@@ -252,6 +259,19 @@ class DataTranformTrain():
                 fi = fi.sort_values('Feature importance', ascending=False).reset_index(drop=True)
             fi.to_excel('artifacts/ml_results/{0}/{1} - Feature importance.xlsx'.format(self.label, list(models.keys())[i]), index=False)
 
+            
+            timestamp = " " + str(pd.to_datetime('today'))
+            with mlflow.start_run(run_name=list(models.keys())[i] + timestamp):
+                mlflow.set_tag('label', self.label)
+                mlflow.set_tag('algo', list(models.keys())[i])
+
+                # Log model parameters, metrics, and artifacts using MLflow
+                mlflow.log_params(final_pipeline.named_steps['model'].get_params())
+                mlflow.log_metric('auc train', metric['AUC-ROC Train'][0])
+                mlflow.log_metric('auc val', metric['AUC-ROC Val'][0])
+                mlflow.sklearn.log_model(final_pipeline, 'model')
+
+            mlflow.end_run()
 
         algo_best_model_metric = pd.DataFrame(list(zip(model_list, AUC_ROC_list)), columns=['Model Name', 'AUC_ROC']).sort_values(by=["AUC_ROC"],ascending=False).reset_index(drop=True)
         algo_best_model_metric.to_excel('artifacts/ml_results/{0}/algo_performance.xlsx'.format(self.label), index=False)

@@ -53,7 +53,6 @@ or run "main.py"/"main.ipynb"
 
 ## To be added
 
-- Mlflow
 - Docker
 - Automate
     - airflow? but then I can't turn of my computer.

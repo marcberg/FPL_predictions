@@ -9,3 +9,4 @@ xgboost
 dill
 openpyxl
 mlflow
+tensorflow<2.11 --user

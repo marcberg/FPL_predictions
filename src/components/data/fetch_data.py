@@ -9,7 +9,7 @@ game_list = get_game_list()
 converted_timestamps = pd.to_datetime(game_list.kickoff)
 
 fetch_current_season = min(converted_timestamps.dt.strftime('%y').astype(int))
-fetch_previous_seasons = range(fetch_current_season-3, fetch_current_season)
+fetch_previous_seasons = range(fetch_current_season-4, fetch_current_season-1)
 
 def fetch_data(fetching_function, current_season=fetch_current_season, previous_seasons=fetch_previous_seasons, season_specific=True):
 

@@ -119,6 +119,7 @@ class DataTranformTrain():
             "Decision Tree": {
                 'model__criterion':['log_loss', 'entropy', 'gini'],
                 'model__max_depth': [2, 3, 4, 5, 6],
+                'model__min_samples_leaf': [5, 10, 20, 50]
                 # 'model__splitter':['best','random'],
                 # 'model__max_features':['sqrt','log2'],
             },
@@ -126,7 +127,7 @@ class DataTranformTrain():
                 'model__bootstrap': [True],
                 'model__max_depth': [2, 3, 4, 5, 6],
                 'model__max_features': [10, 20, 50],
-                #'model__min_samples_leaf': [3, 4, 5, 10, 20],
+                'model__min_samples_leaf': [3, 4, 5, 10, 20, 50, 100],
                 'model__n_estimators': [10, 50, 100, 500],
             },
             "Gradient Boosting":{
@@ -134,7 +135,7 @@ class DataTranformTrain():
                 'model__learning_rate': [0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1],
                 #"model__min_samples_split": np.linspace(0.1, 0.5, 12),
                 #"model__min_samples_leaf": np.linspace(0.1, 0.5, 12),
-                "model__min_samples_leaf": [5, 10, 20, 50, 100],
+                'model__min_samples_leaf': [3, 4, 5, 10, 20, 50, 100],
                 'model__max_depth': [2, 3, 4, 5, 6],
                 #"model__max_features":["log2", "sqrt"],
                 #"model__criterion": ["friedman_mse",  "mae"],
@@ -152,6 +153,8 @@ class DataTranformTrain():
                 'model__learning_rate': [0.01, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1],
                 #"model__gamma":[0.5, 1, 2],
                 'model__n_estimators': [10, 50, 100],
+                'model__min_child_weight': [3, 4, 5, 10, 20, 50, 100],
+
             },     
         }
 

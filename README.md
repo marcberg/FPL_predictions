@@ -39,8 +39,8 @@ src
 - Improve the training-part.
 - Add more features.
     - Player-data
-- validate that tbl-features are correct.
 - overtraining a lot
+- fix score-dataset with teams next game.
 
 ## How to run all project as-is 2023-07-03 (to be put in pipeline)
 

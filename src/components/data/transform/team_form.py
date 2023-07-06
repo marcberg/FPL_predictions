@@ -27,7 +27,7 @@ class team_form():
         team_games['kickoff'] = pd.to_datetime(team_games['kickoff'])
         team_games = team_games.sort_values('kickoff').reset_index(drop=True)
 
-        team_games['next_id'] = team_games.groupby('team_id_season')['id'].shift(-1)
+        team_games['next_id'] = team_games.groupby(['season_start_year', 'team_id_season'])['id'].shift(-1)
 
         team_games = team_games.drop(['team_h_score', 'team_a_score'], axis=1)
 

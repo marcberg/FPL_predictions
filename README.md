@@ -37,8 +37,6 @@ src
 ## To do-list
 
 - Improve the training-part.
-- Add more features.
-    - Player-data
 - overtraining a lot
 - fix score-dataset with teams next game.
 

@@ -28,8 +28,11 @@ def get_player_info(name=None, season=None):
         elements = pd.DataFrame(data["elements"])
         elements["playername"] = elements["first_name"] + " " + elements["second_name"]
     else:
-        url = f"https://raw.githubusercontent.com/wiscostret/histfpldata/master/getplayerinfo{season}.csv"
-        elements = pd.read_csv(url, encoding="UTF-8")
+        try:
+            url = f"https://raw.githubusercontent.com/wiscostret/histfpldata/master/getplayerinfo{season}.csv"
+            elements = pd.read_csv(url, encoding="UTF-8")
+        except:
+            pass
     if name is None:
         return elements
     else:
@@ -64,7 +67,10 @@ def get_player_details(playerid=None, name=None, season=None):
         raise ValueError("Please only supply playerid OR name, not both.")
 
     if season is not None:
-        detinfo = pd.read_csv(f"https://raw.githubusercontent.com/wiscostret/histfpldata/master/getplayerdetails{season}.csv", encoding="UTF-8")
+        try:
+            detinfo = pd.read_csv(f"https://raw.githubusercontent.com/wiscostret/histfpldata/master/getplayerdetails{season}.csv", encoding="UTF-8")
+        except:
+            pass
         
         if playerid is None:
             if name is None:

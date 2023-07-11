@@ -10,9 +10,12 @@ def get_fdr():
 
 def get_game_list(season=None):
     if season is not None:
-        url = f"https://raw.githubusercontent.com/wiscostret/histfpldata/master/getgamelist{season}.csv"
-        gamelist = pd.read_csv(url, encoding="UTF-8")
-        return gamelist
+        try:
+            url = f"https://raw.githubusercontent.com/wiscostret/histfpldata/master/getgamelist{season}.csv"
+            gamelist = pd.read_csv(url, encoding="UTF-8")
+            return gamelist
+        except:
+            pass
     else:
         fdr_data = get_fdr()
         fdr_data.set_index('id', inplace=True)

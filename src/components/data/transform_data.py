@@ -4,6 +4,7 @@ import numpy as np
 from src.components.data.transform.game_base import games_base
 from src.components.data.transform.team_form import team_form
 from src.components.data.transform.table import table
+from src.components.data.transform.player import player_data
 
 def tbl_interactions_features(df, features, interaction_with, prefix):
     for f in features:
@@ -22,6 +23,8 @@ def create_data():
 
     table_features = table()
 
+    player = player_data()
+
     # merge
     data = base.merge(home_team_form, left_on=['season_start_year', 'team_h', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id'], how='inner').drop(['next_id', 'team_id_season'], axis=1)
     data = data.merge(away_team_form, left_on=['season_start_year', 'team_a', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id'], how='inner').drop(['next_id', 'team_id_season'], axis=1)
@@ -31,6 +34,10 @@ def create_data():
     data = data.merge(table_features.add_prefix('tbl_home_'), left_on=['season_start_year', 'kickoff_date', 'team_h'], right_on=['tbl_home_season_start_year', 'tbl_home_next_kickoff_date', 'tbl_home_team_id_season'], how='inner')
     data = data.merge(table_features.add_prefix('tbl_away_'), left_on=['season_start_year', 'kickoff_date', 'team_a'], right_on=['tbl_away_season_start_year', 'tbl_away_next_kickoff_date', 'tbl_away_team_id_season'], how='inner')
     data = data.drop(['kickoff_date', 'tbl_home_season_start_year', 'tbl_home_next_kickoff_date', 'tbl_home_team_id_season', 'tbl_away_season_start_year', 'tbl_away_next_kickoff_date', 'tbl_away_team_id_season'],axis=1)
+    
+    data = data.merge(player.add_prefix('player_home_'), left_on=['season_start_year', 'id', 'team_h'], right_on=['player_home_season_start_year', 'player_home_next_id', 'player_home_team_id_season'], how='left')
+    data = data.merge(player.add_prefix('player_away_'), left_on=['season_start_year', 'id', 'team_a'], right_on=['player_away_season_start_year', 'player_away_next_id', 'player_away_team_id_season'], how='left')
+    data = data.drop(['player_home_season_start_year', 'player_away_season_start_year', 'player_home_next_id', 'player_away_next_id', 'player_home_team_id_season', 'player_away_team_id_season'], axis=1)
 
     # interactions
     tbl_home_interaction_features = ["tbl_home_points_to_team_above", "tbl_home_points_to_team_below", "tbl_home_points_to_win", "tbl_home_points_to_cl", "tbl_home_points_to_euro", "tbl_home_points_to_regulation"]

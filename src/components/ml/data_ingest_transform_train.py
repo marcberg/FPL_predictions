@@ -48,7 +48,7 @@ class DataIngest():
     def create_train_and_test(self):
 
         df=pd.read_csv(self.config.raw_data_path)
-        df_features = df.drop(["season_start_year","GW","id","team_h","team_a","train_score","home","away","kickoff_year","kickoff_month"], axis=1)
+        df_features = df.drop(["season_start_year","GW","id","team_h","team_a","train_score","home","away","kickoff_year","kickoff_month","kickoff_date"], axis=1)
         #os.makedirs(os.path.dirname(self.ingestion_config.train_data_path), exist_ok=True)
 
         train_set, test_set=train_test_split(df_features.loc[df.train_score == "train"],test_size=0.4,random_state=42)
@@ -57,7 +57,17 @@ class DataIngest():
         train_set.to_csv(self.config.train_data_path,index=False,header=True)
         test_set.to_csv(self.config.test_data_path,index=False,header=True)
         val_set.to_csv(self.config.val_data_path,index=False,header=True)
-        df.loc[df.train_score == "score"].to_csv(self.config.score_data_path,index=False,header=True)
+        
+        score = df.loc[df.train_score == "score"]
+        h = score[['id', 'team_h']].rename(columns={"team_h":"team"})
+        a = score[['id', 'team_a']].rename(columns={"team_a":"team"})
+
+        h_a = pd.concat([h, a]).sort_values(["team", "id"]).reset_index(drop=True)
+        h_a['row_number'] = h_a.groupby('team').cumcount() + 1
+
+        next_games = h_a.loc[(h_a['row_number'] == 1)]['id'].drop_duplicates()
+        teams_next_game = score.merge(next_games, on="id", how="inner")
+        teams_next_game.to_csv(self.config.score_data_path,index=False,header=True)
 
         return(
             self.config.train_data_path,

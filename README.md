@@ -31,15 +31,13 @@ src
         - data - fetch data from API and transform data to train and score.
             - api - Functions that fetch the data.
             - transform - Functions used to create features.
-        ml - transform, train and score
+        - ml - transform, train and score
 
 
 ## To do-list
 
 - Improve the training-part.
 - overtraining a lot
-- fix score-dataset with teams next game.
-- make sure a overtrained model isn't selected as best model
 
 ## How to run all project as-is 2023-07-03 (to be put in pipeline)
 

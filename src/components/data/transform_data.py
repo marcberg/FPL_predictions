@@ -39,7 +39,7 @@ def create_data():
     # merge table
     data = data.merge(table_features.add_prefix('tbl_home_'), left_on=['season_start_year', 'kickoff_date', 'team_h'], right_on=['tbl_home_season_start_year', 'tbl_home_next_kickoff_date', 'tbl_home_team_id_season'], how='inner')
     data = data.merge(table_features.add_prefix('tbl_away_'), left_on=['season_start_year', 'kickoff_date', 'team_a'], right_on=['tbl_away_season_start_year', 'tbl_away_next_kickoff_date', 'tbl_away_team_id_season'], how='inner')
-    data = data.drop(['kickoff_date', 'tbl_home_season_start_year', 'tbl_home_next_kickoff_date', 'tbl_home_team_id_season', 'tbl_away_season_start_year', 'tbl_away_next_kickoff_date', 'tbl_away_team_id_season'],axis=1)
+    data = data.drop(['tbl_home_season_start_year', 'tbl_home_next_kickoff_date', 'tbl_home_team_id_season', 'tbl_away_season_start_year', 'tbl_away_next_kickoff_date', 'tbl_away_team_id_season'],axis=1)
     
     # table interactions
     tbl_home_interaction_features = ["tbl_home_points_to_team_above", "tbl_home_points_to_team_below", "tbl_home_points_to_win", "tbl_home_points_to_cl", "tbl_home_points_to_euro", "tbl_home_points_to_regulation"]

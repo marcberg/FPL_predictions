@@ -38,6 +38,7 @@ src
 
 - Improve the training-part.
 - overtraining a lot
+- document code and functions
 
 ## How to run all project as-is 2023-07-03 (to be put in pipeline)
 

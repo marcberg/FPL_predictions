@@ -23,7 +23,7 @@ from src.components.data.transform_data import create_data
 create_data()
 
 # ML
-from src.components.ml.data_ingest_transform_train import DataConfig, DataIngest, DataTranformTrain
+from src.components.ml.data_ingest_transform_train import DataIngest, DataTranformTrain
 
 data_ingest = DataIngest()  
 data_ingest.create_train_and_test()  

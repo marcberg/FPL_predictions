@@ -65,7 +65,7 @@ def create_data():
     target_char = "player_home_"
     replacement_char = "player_diff_"
     for home, away in zip(player_home_features, player_away_features):
-        diff = replace_char_in_list([home], target_char, replacement_char)
+        diff = replace_char_in_list([home], target_char, replacement_char)[0]
         data[diff] = data[home] - data[away]
 
     # write

@@ -50,7 +50,7 @@ class DataIngest():
         df_features = df.drop(["season_start_year","GW","id","team_h","team_a","train_score","home","away","kickoff_year","kickoff_month"], axis=1)
         #os.makedirs(os.path.dirname(self.ingestion_config.train_data_path), exist_ok=True)
 
-        train_set, test_set=train_test_split(df_features.loc[df.train_score == "train"],test_size=0.4,random_state=42)
+        train_set, test_set=train_test_split(df_features.loc[df.train_score == "train"],test_size=0.2,random_state=42)
         test_set, val_set=train_test_split(test_set,test_size=0.5,random_state=42)
 
         train_set.to_csv(self.config.train_data_path,index=False,header=True)

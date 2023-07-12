@@ -39,6 +39,7 @@ src
 - Improve the training-part.
 - overtraining a lot
 - fix score-dataset with teams next game.
+- make sure a overtrained model isn't selected as best model
 
 ## How to run all project as-is 2023-07-03 (to be put in pipeline)
 

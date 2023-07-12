@@ -215,8 +215,9 @@ class DataTranformTrain():
             cv_results['ok'] = np.where((cv_results['mean_train_score'] < 0.95) & (cv_results['div'] < 1.5), 1, 0)
             cv_results.to_excel('artifacts/ml_results/{0}/{1} - Grid.xlsx'.format(self.label, list(models.keys())[i]), index=False)
 
-            bp_str = cv_results.loc[cv_results['ok'] == 1]['params'].iloc[0]
-            bp = ast.literal_eval(bp_str)
+            #bp_str = cv_results.loc[cv_results['ok'] == 1]['params'].iloc[0]
+            #bp = ast.literal_eval(bp_str)
+            bp = cv_results.loc[cv_results['ok'] == 1]['params'].loc[0]
 
             nbp = {}
             for k, v in bp.items():

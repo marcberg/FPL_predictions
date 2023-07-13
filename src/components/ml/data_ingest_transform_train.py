@@ -222,12 +222,13 @@ class DataTranformTrain():
 
             cv_results = pd.DataFrame(grid.cv_results_).sort_values(by=["rank_test_score"],ascending=True).reset_index(drop=True)
             cv_results['div'] = cv_results.mean_train_score / cv_results.mean_test_score
-            cv_results['ok'] = np.where((cv_results['mean_train_score'] < 0.95) & (cv_results['div'] < 1.5), 1, 0)
+            cv_results['ok'] = np.where((cv_results['mean_train_score'] <= 0.95) & (cv_results['div'] <= 1.3), 1, 0)
             cv_results.to_excel('artifacts/ml_results/{0}/{1} - Grid.xlsx'.format(self.label, list(models.keys())[i]), index=False)
 
-            #bp_str = cv_results.loc[cv_results['ok'] == 1]['params'].iloc[0]
-            #bp = ast.literal_eval(bp_str)
-            bp = cv_results.loc[cv_results['ok'] == 1]['params'].loc[0]
+            if np.sum(cv_results['ok']) > 0:
+                bp = cv_results.loc[cv_results['ok'] == 1]['params'].loc[0]
+            else:
+                bp = grid.best_params_
 
             nbp = {}
             for k, v in bp.items():

@@ -118,10 +118,10 @@ class DataTranformTrain():
     def algorithms_and_grid(self):
 
         models = {
+            "Logistic Regression": LogisticRegression(),
             "Decision Tree": DecisionTreeClassifier(),
             "Random Forest": RandomForestClassifier(),
             "Gradient Boosting": GradientBoostingClassifier(),
-            "Logistic Regression": LogisticRegression(),
             "XGBoost": xgb.XGBClassifier(),
         }
 

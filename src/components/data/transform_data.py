@@ -11,12 +11,6 @@ def tbl_interactions_features(df, features, interaction_with, prefix):
         df[prefix + f] = (df[interaction_with] * df[f]) * (df[interaction_with] / 38)
     return df
 
-def replace_char_in_list(strings, target_char, replacement_char):
-    for i in range(len(strings)):
-        strings[i] = strings[i].replace(target_char, replacement_char)
-    return strings
-
-
 def create_data():
 
     base = games_base()
@@ -55,18 +49,32 @@ def create_data():
 
     # player interactions
     player_home_features_terms = ['player_home_max_all_', 'player_home_max_g_', 'player_home_max_d_', 'player_home_max_m_', 'player_home_max_f_']
+    player_away_features_terms = [] 
     target_char = "_home_"
     replacement_char = "_away_"
-    player_away_features_terms = replace_char_in_list(player_home_features_terms, target_char, replacement_char)
+
+    for i in range(len(player_home_features_terms)):
+        player_away_features_terms.append(player_home_features_terms[i].replace(target_char, replacement_char))
 
     player_home_features = [element for element in data.columns if any(term in element for term in player_home_features_terms)]
     player_away_features = [element for element in data.columns if any(term in element for term in player_away_features_terms)]
 
-    target_char = "player_home_"
-    replacement_char = "player_diff_"
-    for home, away in zip(player_home_features, player_away_features):
-        diff = replace_char_in_list([home], target_char, replacement_char)[0]
-        data[diff] = data[home] - data[away]
+    player_diff_features = []
+    target_char = "_home_"
+    replacement_char = "_diff_"
+
+    for i in range(len(player_home_features)):
+        player_diff_features.append(player_home_features[i].replace(target_char, replacement_char))
+
+    # Joining columns using pd.concat(axis=1)
+    diff_columns = [diff for diff in player_diff_features]
+    diff_values = data[player_home_features].values - data[player_away_features].values
+    diff_df = pd.DataFrame(diff_values, columns=diff_columns)
+    data = pd.concat([data, diff_df], axis=1)
+
+    # Create a new copy of the DataFrame
+    #new_data = data.copy()
+
 
     # write
     data.to_csv('artifacts/data.csv', index=False)

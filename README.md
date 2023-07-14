@@ -37,7 +37,8 @@ src
 ## To do-list
 
 - Improve the training-part.
-- overtraining a lot
+    - add pca
+    - feature selection
 - document code and functions
 
 ## How to run all project as-is 2023-07-03 (to be put in pipeline)

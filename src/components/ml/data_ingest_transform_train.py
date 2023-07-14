@@ -139,27 +139,27 @@ class DataTranformTrain():
                 'model__min_samples_split': [2, 5, 10],  
             },
             "Random Forest":{
-                'model__bootstrap': [True, False],
-                'model__max_features': ['auto', 'sqrt', 'log2', None],
-                'model__max_depth': [None, 2, 3, 4, 5, 6],
-                'model__max_features': [10, 20, 50],
+                'model__bootstrap': [True],
+                'model__max_features': ['sqrt', 'log2', None],
+                #'model__max_features': [10, 20, 50],
+                'model__max_depth': [2, 3, 4, 6],
                 'model__min_samples_leaf': [1, 2, 4, 5, 10, 20, 50],
                 'model__n_estimators': [10, 50, 100, 500, 1000],
             },
             "Gradient Boosting":{
                 "model__loss":["log_loss","deviance", "exponential"],
-                'model__learning_rate': [0.001, 0.005, 0.01, 0.015, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1],
+                'model__learning_rate': [0.001, 0.005, 0.01, 0.015, 0.03, 0.06],
                 'model__min_samples_leaf': [1, 2, 5, 10, 20, 50],
-                'model__max_depth': [None, 2, 3, 4, 5, 6],
-                'model__n_estimators': [10, 50, 100, 500],
+                'model__max_depth': [2, 3, 4, 6],
+                'model__n_estimators': [10, 50, 100],
             },
             "XGBoost":{
-                'model__max_depth': [2, 3, 4, 5, 6],
-                'model__learning_rate': [0.001, 0.005, 0.01, 0.015, 0.02, 0.03, 0.04, 0.05, 0.075, 0.1],
+                'model__max_depth': [2, 3, 4, 6],
+                'model__learning_rate': [0.001, 0.005, 0.01, 0.015, 0.03, 0.06],
                 'model__n_estimators': [10, 50, 100, 500],
-                'model__min_child_weight': [3, 4, 5, 10, 20, 50],
-                'model__gamma': [0, 0.1, 0.2, 0.3, 0.4, 1, 2],
-                'model__reg_lambda': [0, 0.1, 1, 10, 100]
+                'model__min_child_weight': [3, 5, 10, 50],
+                'model__gamma': [0, 0.1, 1, 2],
+                'model__reg_lambda': [0, 0.1, 1, 10]
 
             },     
         }

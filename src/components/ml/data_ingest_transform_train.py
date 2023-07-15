@@ -164,7 +164,26 @@ class DataTranformTrain():
             },     
         }
 
-        return models, params
+        
+        params_test = {
+            "Logistic Regression":{
+                'model__penalty': ['none', 'l2'],   
+            },
+            "Decision Tree": {
+                'model__criterion': ['entropy', 'gini'], 
+            },
+            "Random Forest":{
+                'model__max_features': ['sqrt', 'log2'],
+            },
+            "Gradient Boosting":{
+                "model__loss":["log_loss","deviance"],
+            },
+            "XGBoost":{
+                'model__max_depth': [2, 3]
+            },
+        }
+
+        return models, params_test
 
 
     def grid_search(self):

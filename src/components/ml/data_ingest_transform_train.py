@@ -17,6 +17,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.decomposition import PCA
 from sklearn.model_selection import GridSearchCV
 
 from sklearn.tree import DecisionTreeClassifier
@@ -90,24 +91,43 @@ class DataTranformTrain():
         numerical_columns = [feature for feature in df.columns if df[feature].dtype != 'O']
         categorical_columns = [feature for feature in df.columns if df[feature].dtype == 'O']
 
+        games_terms = ['_games_overall_', '_games_home_', '_games_away_']
+        games_features = [feature for feature in df.columns if any(term in feature for term in games_terms) & (df[feature].dtype != 'O')]
+
+        tbl_terms = ['tbl_']
+        tbl_features = [feature for feature in df.columns if any(term in feature for term in tbl_terms) & (df[feature].dtype != 'O')]
+
+        player_terms = ['player_']
+        player_features = [feature for feature in df.columns if any(term in feature for term in player_terms) & (df[feature].dtype != 'O')]
+
+        numerical_columns = [x for x in numerical_columns if x not in games_features + tbl_features + player_features]
+
+
         num_pipeline= Pipeline(
             steps=[
             ("imputer",SimpleImputer(strategy="median")),
             ("scaler",StandardScaler())
             ]
         )
-
+        pca_pipeline=Pipeline(
+            steps=[
+            ("imputer",SimpleImputer(strategy="median")),
+            ('scaler', StandardScaler()),
+            ('pca', PCA(n_components=5))
+            ]
+        )
         cat_pipeline=Pipeline(
             steps=[
             ("imputer",SimpleImputer(strategy="most_frequent")),
-            ("one_hot_encoder",OneHotEncoder()),
-            ("scaler",StandardScaler(with_mean=False))
+            ("one_hot_encoder",OneHotEncoder(handle_unknown='ignore'))
             ]
         )
-
         preprocessor=ColumnTransformer(
             [
-            ("num_pipeline",num_pipeline,numerical_columns),
+            ("num_pipeline", num_pipeline, numerical_columns),
+            ("games_pca", pca_pipeline, games_features),
+            ("tbl_pca", pca_pipeline, tbl_features),
+            ("player_pca", pca_pipeline, player_features),
             ("cat_pipelines",cat_pipeline,categorical_columns)
             ]
         )
@@ -147,7 +167,7 @@ class DataTranformTrain():
                 'model__n_estimators': [10, 50, 100, 500, 1000],
             },
             "Gradient Boosting":{
-                "model__loss":["log_loss","deviance", "exponential"],
+                "model__loss":["log_loss", "exponential"],
                 'model__learning_rate': [0.001, 0.005, 0.01, 0.015, 0.03, 0.06],
                 'model__min_samples_leaf': [1, 2, 5, 10, 20, 50],
                 'model__max_depth': [2, 3, 4, 6],
@@ -164,26 +184,7 @@ class DataTranformTrain():
             },     
         }
 
-        
-        params_test = {
-            "Logistic Regression":{
-                'model__penalty': ['none', 'l2'],   
-            },
-            "Decision Tree": {
-                'model__criterion': ['entropy', 'gini'], 
-            },
-            "Random Forest":{
-                'model__max_features': ['sqrt', 'log2'],
-            },
-            "Gradient Boosting":{
-                "model__loss":["log_loss","deviance"],
-            },
-            "XGBoost":{
-                'model__max_depth': [2, 3]
-            },
-        }
-
-        return models, params_test
+        return models, params
 
 
     def grid_search(self):
@@ -248,7 +249,6 @@ class DataTranformTrain():
             for k, v in bp.items():
                 nbp[k[k.index('__')+2:]] = v
 
-
             final_pipeline = Pipeline([
                 ('preprocessing', preprocessor),
                 ('model', model.set_params(**nbp))
@@ -275,7 +275,33 @@ class DataTranformTrain():
             algo_best_model.append((list(models.keys())[i], final_pipeline))
 
             # Feature importance
-            feature_names = final_pipeline.named_steps['preprocessing'].get_feature_names_out()
+
+            # Extract feature names
+            feature_names = []
+
+            # Get the feature names from the numerical pipeline
+            num_feature_names = final_pipeline.named_steps['preprocessing'].transformers_[0][1].get_feature_names_out()
+            feature_names.extend(num_feature_names)
+
+            # Get the feature names from the games PCA pipeline
+            games_pca_feature_names = ['games_pca_component_' + str(i) for i in range(5)]
+            feature_names.extend(games_pca_feature_names)
+
+            # Get the feature names from the tbl PCA pipeline
+            tbl_pca_feature_names = ['tbl_pca_component_' + str(i) for i in range(5)]
+            feature_names.extend(tbl_pca_feature_names)
+
+            # Get the feature names from the player PCA pipeline
+            player_pca_feature_names = ['player_pca_component_' + str(i) for i in range(5)]
+            feature_names.extend(player_pca_feature_names)
+
+            # Get the feature names from the categorical pipeline (2023-07-15 - currently I have no categorical features)
+            try:
+                cat_feature_names = final_pipeline.named_steps['preprocessing'].transformers_[4][1].named_steps['one_hot_encoder'].get_feature_names_out()
+                feature_names.extend(cat_feature_names)
+            except:
+                pass
+
             if list(models.keys())[i] == "Logistic Regression":
                 coefficients = final_pipeline.named_steps['model'].coef_[0]
                 fi = pd.DataFrame({

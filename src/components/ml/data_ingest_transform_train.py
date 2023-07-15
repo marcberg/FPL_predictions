@@ -221,7 +221,7 @@ class DataTranformTrain():
             cv_results.to_excel('artifacts/ml_results/{0}/{1} - Grid.xlsx'.format(self.label, list(models.keys())[i]), index=False)
 
             if np.sum(cv_results['ok']) > 0:
-                bp = cv_results.loc[cv_results['ok'] == 1]['params'].loc[0]
+                bp = cv_results.loc[cv_results['ok'] == 1]['params'].iloc[0]
             else:
                 bp = grid.best_params_
 

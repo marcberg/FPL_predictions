@@ -12,6 +12,11 @@ logging.getLogger("mlflow").setLevel(logging.ERROR)
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="_distutils_hack")
 
+from pandas.api.types import is_string_dtype
+from pandas.api.types import is_numeric_dtype
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -76,7 +81,35 @@ class DataIngest():
             self.config.score_data_path
         )
     
+def test_significant(df, feature, target):
+    
+    if is_string_dtype(df[feature]) or (is_numeric_dtype(df[feature]) and len(df[feature].unique()) <= 5):
 
+        df_temp = pd.DataFrame({"feature": df[feature], "target": df[target]})
+
+        # Perform one-way ANOVA
+        model = smf.ols('target ~ feature', data=df_temp).fit()
+        anova_table = sm.stats.anova_lm(model)
+
+        result = pd.DataFrame({"feature": [feature], "PR(>F)": [anova_table['PR(>F)'][0]]})
+        
+    elif is_numeric_dtype(df[feature]):
+
+        bins = np.nanpercentile(df[feature], [0, 20, 40, 60, 80, 100])
+        bins = [i for n, i in enumerate(bins) if i not in bins[:n]]
+        bins[0] = np.floor(bins[0])
+        bins[-1] = np.ceil(bins[-1])
+                
+        df_temp = pd.DataFrame({"feature": df[feature], "target": df[target]})
+        df_temp[feature+'_bins'] = pd.cut(pd.to_numeric(df[feature]), bins, include_lowest=True)
+
+        # Perform one-way ANOVA
+        model = smf.ols(f"target ~ {feature+'_bins'}", data=df_temp).fit()
+        anova_table = sm.stats.anova_lm(model)
+
+        result = pd.DataFrame({"feature": [feature], "PR(>F)": [anova_table['PR(>F)'][0]]})
+    
+    return result
 
 class DataTranformTrain():
 
@@ -86,9 +119,32 @@ class DataTranformTrain():
         self.label = label
         self.drop_labels_list = drop_labels_list
 
+
+    def feature_selection_by_test(self, select_p_value=0.05):
+
+        train_df=pd.read_csv(self.config.train_data_path)
+
+        if self.perform_cross_validation:
+            test_df=pd.read_csv(self.config.test_data_path)
+            train_df = pd.concat([train_df, test_df]).reset_index(drop=True)
+
+        numerical_columns = [feature for feature in train_df.columns if train_df[feature].dtype != 'O']
+        categorical_columns = [feature for feature in train_df.columns if train_df[feature].dtype == 'O']
+
+        features = numerical_columns + categorical_columns
+        features = [x for x in features if x not in self.drop_labels_list]
+
+        p_values = pd.DataFrame()
+        for p in features:
+            p_value = test_significant(train_df, p, self.label)
+            p_values = pd.concat([p_values, p_value])
+
+        selected_features = p_values.loc[p_values["PR(>F)"] < select_p_value]["feature"].to_list()
+        return selected_features
+    
+
     def preprocessor_pipeline(self, df):
 
-        numerical_columns = [feature for feature in df.columns if df[feature].dtype != 'O']
         categorical_columns = [feature for feature in df.columns if df[feature].dtype == 'O']
 
         games_terms = ['_games_overall_', '_games_home_', '_games_away_']
@@ -100,8 +156,7 @@ class DataTranformTrain():
         player_terms = ['player_']
         player_features = [feature for feature in df.columns if any(term in feature for term in player_terms) & (df[feature].dtype != 'O')]
 
-        numerical_columns = [x for x in numerical_columns if x not in games_features + tbl_features + player_features]
-
+        selected_numerical_columns = self.feature_selection_by_test()
 
         num_pipeline= Pipeline(
             steps=[
@@ -124,7 +179,7 @@ class DataTranformTrain():
         )
         preprocessor=ColumnTransformer(
             [
-            ("num_pipeline", num_pipeline, numerical_columns),
+            ("num_pipeline", num_pipeline, selected_numerical_columns),
             ("games_pca", pca_pipeline, games_features),
             ("tbl_pca", pca_pipeline, tbl_features),
             ("player_pca", pca_pipeline, player_features),

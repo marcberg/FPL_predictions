@@ -13,17 +13,22 @@ def tbl_interactions_features(df, features, interaction_with, prefix):
 
 def create_data():
 
+    print("Create_data - Games base")
     base = games_base()
 
+    print("Create_data - Team form")
     form = team_form
     home_team_form, away_team_form = form.overall_form()
     home_team_home_form = form.home_away_form(home_team=1)
     away_team_away_form = form.home_away_form(home_team=0)
 
+    print("Create_data - Table")
     table_features = table()
 
+    print("Create_data - Player")
     player = player_data()
 
+    print("Create_data - Merging and interactions")
     # merge form
     data = base.merge(home_team_form, left_on=['season_start_year', 'team_h', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id'], how='inner').drop(['next_id', 'team_id_season'], axis=1)
     data = data.merge(away_team_form, left_on=['season_start_year', 'team_a', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id'], how='inner').drop(['next_id', 'team_id_season'], axis=1)
@@ -75,6 +80,6 @@ def create_data():
     # Create a new copy of the DataFrame
     #new_data = data.copy()
 
-
     # write
     data.to_csv('artifacts/data.csv', index=False)
+    print("Create_data - DONE! \n")

@@ -38,6 +38,7 @@ docker run -d --name fpl_predictions_container fplpredictions:latest
 
 ## Folder structure
 
+```
 FPL_predictions/
 │
 ├─ artifacts/
@@ -52,7 +53,7 @@ FPL_predictions/
     │   │   ├─ api/
     │   │   └─ transform/
     │   └─ ml/
-
+```
 
 
 ### FPL_predictions

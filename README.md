@@ -17,7 +17,6 @@ My personal goal with this project is to start using:
 Setup enviroment and install packages
 
 ```
-
 conda create -p venv python==3.10 -y
 
 conda activate venv/
@@ -25,7 +24,6 @@ conda activate venv/
 conda install ipykernel -y
 
 pip install -r requirements.txt
-
 ```
 
 ## run project with docker
@@ -56,10 +54,8 @@ docker run --rm -d  fplpredictions:latest
 
 - Improve the training-part.
 - Divide training-part into several functions instead of one big.
-- Feature selection.
 - Document code and functions.
 - Improve main.py as pipeline.
 - Automate with Github actions
 - Build airflow-flow just to learn airflow.
 - don't re-run hold seasons data -> add data cumulative.
-- add prints so we can follow progress while running

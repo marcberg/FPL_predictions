@@ -117,9 +117,9 @@ class DataTranformTrain():
 
     def __init__(self, label, drop_labels_list, perform_cross_validation=True):        
         self.config=DataConfig()
-        self.perform_cross_validation = perform_cross_validation
         self.label = label
         self.drop_labels_list = drop_labels_list
+        self.perform_cross_validation = perform_cross_validation
 
 
     def feature_selection_by_test(self, select_p_value=0.05):
@@ -193,62 +193,8 @@ class DataTranformTrain():
         return preprocessor
 
 
-    def algorithms_and_grid(self):
-
-        models = {
-            "Logistic Regression": LogisticRegression(),
-            "Decision Tree": DecisionTreeClassifier(),
-            "Random Forest": RandomForestClassifier(),
-            "Gradient Boosting": GradientBoostingClassifier(),
-            "XGBoost": xgb.XGBClassifier(),
-        }
-
-        params = {
-            "Logistic Regression":{
-                'model__C': [0.001, 0.01, 0.1, 1, 10], 
-                'model__penalty': ['l1', 'l2'],  
-                'model__max_iter': [100, 1000, 10000],  
-                'model__solver': ['liblinear', 'saga']  
-            },
-            "Decision Tree": {
-                'model__criterion': ['entropy', 'gini'], 
-                'model__max_depth': [None, 2, 3, 4, 5, 6], 
-                'model__min_samples_leaf': [1, 2, 5, 10, 20],  
-                'model__min_samples_split': [2, 5, 10],  
-            },
-            "Random Forest":{
-                'model__bootstrap': [True],
-                'model__max_features': ['sqrt', 'log2', None],
-                #'model__max_features': [10, 20, 50],
-                'model__max_depth': [2, 3, 4, 6],
-                'model__min_samples_leaf': [1, 2, 4, 5, 10, 20, 50],
-                'model__n_estimators': [10, 50, 100, 500, 1000],
-            },
-            "Gradient Boosting":{
-                "model__loss":["log_loss", "exponential"],
-                'model__learning_rate': [0.001, 0.005, 0.01, 0.015, 0.03, 0.06],
-                'model__min_samples_leaf': [1, 2, 5, 10, 20, 50],
-                'model__max_depth': [2, 3, 4, 6],
-                'model__n_estimators': [10, 50, 100],
-            },
-            "XGBoost":{
-                'model__max_depth': [2, 3, 4, 6],
-                'model__learning_rate': [0.001, 0.005, 0.01, 0.015, 0.03, 0.06],
-                'model__n_estimators': [10, 50, 100, 500],
-                'model__min_child_weight': [3, 5, 10, 50],
-                'model__gamma': [0, 0.1, 1, 2],
-                'model__reg_lambda': [0, 0.1, 1, 10]
-
-            },     
-        }
-
-        return models, params
-
-
-    def grid_search(self):
-
+    def adjust_train_test(self):
         print(self.label)
-        models, params = self.algorithms_and_grid()
 
         print("- Importing train, test and val")
         train_df=pd.read_csv(self.config.train_data_path)
@@ -269,14 +215,94 @@ class DataTranformTrain():
             preprocessor = self.preprocessor_pipeline(df = train_df.drop(columns=self.drop_labels_list, axis=1))
             indices_train = indices_train.tolist()
 
-        model_list = []
-        AUC_ROC_list = []
-        algo_best_param = {}
-        algo_best_model = []
+        return X, y, indices_train, indices_test, cv, preprocessor, val_df
+    
+
+    def select_param_from_grid(self, grid, model_name):
+
+        cv_results = pd.DataFrame(grid.cv_results_).sort_values(by=["rank_test_score"],ascending=True).reset_index(drop=True)
+        cv_results['div'] = cv_results.mean_train_score / cv_results.mean_test_score
+        cv_results['ok'] = np.where((cv_results['mean_train_score'] <= 0.95) & (cv_results['div'] <= 1.3), 1, 0)
+        cv_results.to_excel('artifacts/ml_results/{0}/{1} - Grid.xlsx'.format(self.label, model_name), index=False)
+
+        if np.sum(cv_results['ok']) > 0:
+            bp = cv_results.loc[cv_results['ok'] == 1]['params'].iloc[0]
+        else:
+            bp = grid.best_params_
+
+        nbp = {}
+        for k, v in bp.items():
+            nbp[k[k.index('__')+2:]] = v
+
+        return nbp
+
+
+    def calculate_and_save_metrics(self, final_pipeline, X, y, indices_train, val_df, model_name):
+        metric = evaluate_model_kpi(model=final_pipeline, 
+                                        X_train=X.iloc[indices_train], 
+                                        y_train=y.iloc[indices_train], 
+                                        X_val=val_df, 
+                                        y_val=val_df[self.label], 
+                                        threshold=0.5,
+                                        model_name=model_name
+                                        )
+        metric_long = metric.melt(id_vars=['Algorithm'], var_name='Metric', value_name='Metric value')
+        metric_long.to_excel('artifacts/ml_results/{0}/{1} - Metrics.xlsx'.format(self.label, model_name), index=False)
+        print(metric_long[["Metric", "Metric value"]])
+        print("\n")
+        
+        return metric
+
+
+    def collect_and_save_feature_importance(self, final_pipeline, model_name):
+        
+            feature_names = []
+
+            num_feature_names = final_pipeline.named_steps['preprocessing'].transformers_[0][1].get_feature_names_out()
+            feature_names.extend(num_feature_names)
+
+            games_pca_feature_names = ['games_pca_component_' + str(i) for i in range(5)]
+            feature_names.extend(games_pca_feature_names)
+
+            tbl_pca_feature_names = ['tbl_pca_component_' + str(i) for i in range(5)]
+            feature_names.extend(tbl_pca_feature_names)
+
+            player_pca_feature_names = ['player_pca_component_' + str(i) for i in range(5)]
+            feature_names.extend(player_pca_feature_names)
+
+            # Get the feature names from the categorical pipeline (2023-07-15 - currently I have no categorical features)
+            try:
+                cat_feature_names = final_pipeline.named_steps['preprocessing'].transformers_[4][1].named_steps['one_hot_encoder'].get_feature_names_out()
+                feature_names.extend(cat_feature_names)
+            except:
+                pass
+
+            if model_name == "Logistic Regression":
+                coefficients = final_pipeline.named_steps['model'].coef_[0]
+                fi = pd.DataFrame({
+                    'Feature': feature_names,
+                    'Coefficients': coefficients,
+                    'Abs coefficients': np.abs(coefficients)
+                })
+                fi = fi.sort_values('Abs coefficients', ascending=False).reset_index(drop=True)
+            else:
+                feature_importance = final_pipeline.named_steps['model'].feature_importances_
+                fi = pd.DataFrame({
+                    'Feature': feature_names,
+                    'Feature importance': feature_importance,
+                })
+                fi = fi.sort_values('Feature importance', ascending=False).reset_index(drop=True)
+            fi.to_excel('artifacts/ml_results/{0}/{1} - Feature importance.xlsx'.format(self.label, model_name), index=False)
+
+
+    def grid_search(self, models, params, save_to_mlflow=True):
+
+        X, y, indices_train, indices_test, cv, preprocessor, val_df = self.adjust_train_test()
 
         mlflow.set_experiment(self.label)
 
         print("- Hyperparameter-tuning and training best model for each algo: \n")
+        algo_best_model = []
         all_algo_metrics = pd.DataFrame()
         for i in range(len(list(models))):
             print(list(models.keys())[i])
@@ -298,19 +324,7 @@ class DataTranformTrain():
             grid.fit(X, y)
 
             print("- Select best hyperparameters")
-            cv_results = pd.DataFrame(grid.cv_results_).sort_values(by=["rank_test_score"],ascending=True).reset_index(drop=True)
-            cv_results['div'] = cv_results.mean_train_score / cv_results.mean_test_score
-            cv_results['ok'] = np.where((cv_results['mean_train_score'] <= 0.95) & (cv_results['div'] <= 1.3), 1, 0)
-            cv_results.to_excel('artifacts/ml_results/{0}/{1} - Grid.xlsx'.format(self.label, list(models.keys())[i]), index=False)
-
-            if np.sum(cv_results['ok']) > 0:
-                bp = cv_results.loc[cv_results['ok'] == 1]['params'].iloc[0]
-            else:
-                bp = grid.best_params_
-
-            nbp = {}
-            for k, v in bp.items():
-                nbp[k[k.index('__')+2:]] = v
+            nbp = self.select_param_from_grid(grid=grid, model_name=list(models.keys())[i])
 
             print("- Train best model")
             final_pipeline = Pipeline([
@@ -318,96 +332,33 @@ class DataTranformTrain():
                 ('model', model.set_params(**nbp))
             ])
             final_pipeline.fit(X.iloc[indices_train], y.iloc[indices_train])
-            
-            print("- Calculating metrics \n")
-            # Evaluate Train and Validation dataset
-            metric = evaluate_model_kpi(model=final_pipeline, 
-                                        X_train=X.iloc[indices_train], 
-                                        y_train=y.iloc[indices_train], 
-                                        X_val=val_df, 
-                                        y_val=val_df[self.label], 
-                                        threshold=0.5,
-                                        model_name=list(models.keys())[i]
-                                        )
-            all_algo_metrics = pd.concat([all_algo_metrics, metric]).reset_index(drop=True)
-            metric_long = metric.melt(id_vars=['Algorithm'], var_name='Metric', value_name='Metric value')
-            metric_long.to_excel('artifacts/ml_results/{0}/{1} - Metrics.xlsx'.format(self.label, list(models.keys())[i]), index=False)
-
-            model_list.append(list(models.keys())[i])
-            AUC_ROC_list.append(metric['AUC-ROC Val'][0])
-
-            algo_best_param[list(models.keys())[i]] = nbp
-
             algo_best_model.append((list(models.keys())[i], final_pipeline))
 
-            # Feature importance
+            print("- Calculating metrics \n")
+            metric = self.calculate_and_save_metrics(final_pipeline, X, y, indices_train, val_df, model_name=list(models.keys())[i])
+            all_algo_metrics = pd.concat([all_algo_metrics, metric]).reset_index(drop=True)
 
-            # Extract feature names
-            feature_names = []
-
-            # Get the feature names from the numerical pipeline
-            num_feature_names = final_pipeline.named_steps['preprocessing'].transformers_[0][1].get_feature_names_out()
-            feature_names.extend(num_feature_names)
-
-            # Get the feature names from the games PCA pipeline
-            games_pca_feature_names = ['games_pca_component_' + str(i) for i in range(5)]
-            feature_names.extend(games_pca_feature_names)
-
-            # Get the feature names from the tbl PCA pipeline
-            tbl_pca_feature_names = ['tbl_pca_component_' + str(i) for i in range(5)]
-            feature_names.extend(tbl_pca_feature_names)
-
-            # Get the feature names from the player PCA pipeline
-            player_pca_feature_names = ['player_pca_component_' + str(i) for i in range(5)]
-            feature_names.extend(player_pca_feature_names)
-
-            # Get the feature names from the categorical pipeline (2023-07-15 - currently I have no categorical features)
-            try:
-                cat_feature_names = final_pipeline.named_steps['preprocessing'].transformers_[4][1].named_steps['one_hot_encoder'].get_feature_names_out()
-                feature_names.extend(cat_feature_names)
-            except:
-                pass
-
-            if list(models.keys())[i] == "Logistic Regression":
-                coefficients = final_pipeline.named_steps['model'].coef_[0]
-                fi = pd.DataFrame({
-                    'Feature': feature_names,
-                    'Coefficients': coefficients,
-                    'Abs coefficients': np.abs(coefficients)
-                })
-                fi = fi.sort_values('Abs coefficients', ascending=False).reset_index(drop=True)
-            else:
-                feature_importance = final_pipeline.named_steps['model'].feature_importances_
-                fi = pd.DataFrame({
-                    'Feature': feature_names,
-                    'Feature importance': feature_importance,
-                })
-                fi = fi.sort_values('Feature importance', ascending=False).reset_index(drop=True)
-            fi.to_excel('artifacts/ml_results/{0}/{1} - Feature importance.xlsx'.format(self.label, list(models.keys())[i]), index=False)
-
+            print("- Collect feature importance \n")
+            self.collect_and_save_feature_importance(final_pipeline, model_name=list(models.keys())[i])
             
-            timestamp = " " + str(pd.to_datetime('today'))
-            with mlflow.start_run(run_name=list(models.keys())[i] + timestamp):
-                mlflow.set_tag('label', self.label)
-                mlflow.set_tag('algo', list(models.keys())[i])
+            if save_to_mlflow:
+                timestamp = " " + str(pd.to_datetime('today'))
+                with mlflow.start_run(run_name=list(models.keys())[i] + timestamp):
+                    mlflow.set_tag('label', self.label)
+                    mlflow.set_tag('algo', list(models.keys())[i])
 
-                # Log model parameters, metrics, and artifacts using MLflow
-                mlflow.log_params(final_pipeline.named_steps['model'].get_params())
-                mlflow.log_metric('auc train', metric['AUC-ROC Train'][0])
-                mlflow.log_metric('auc val', metric['AUC-ROC Val'][0])
-                mlflow.sklearn.log_model(final_pipeline, 'model')
+                    # Log model parameters, metrics, and artifacts using MLflow
+                    mlflow.log_params(final_pipeline.named_steps['model'].get_params())
+                    mlflow.log_metric('auc train', metric['AUC-ROC Train'][0])
+                    mlflow.log_metric('auc val', metric['AUC-ROC Val'][0])
+                    mlflow.sklearn.log_model(final_pipeline, 'model')
 
-            mlflow.end_run()
+                mlflow.end_run()
 
-        algo_best_model_metric = pd.DataFrame(list(zip(model_list, AUC_ROC_list)), columns=['Model Name', 'AUC_ROC']).sort_values(by=["AUC_ROC"],ascending=False).reset_index(drop=True)
-        algo_best_model_metric.to_excel('artifacts/ml_results/{0}/algo_performance.xlsx'.format(self.label), index=False)
         all_algo_metrics.to_excel('artifacts/ml_results/{0}/all_algo_metrics.xlsx'.format(self.label), index=False)
 
-        return (
-            algo_best_model_metric, 
-            algo_best_param, 
-            algo_best_model
-        )
+        return algo_best_model
+    
     
 if __name__=='__main__':
     obj=DataIngest()

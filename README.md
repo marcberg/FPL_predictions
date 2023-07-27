@@ -38,31 +38,21 @@ docker run -d --name fpl_predictions_container fplpredictions:latest
 
 ## Folder structure
 
--artifacts - data.
--- fetched_data - raw-data from API.
--- ml_result - result from latest run
--notebook - used for testing and analysing.
--src 
--- components - functions used in the project.
---- data - fetch data from API and transform data to train and score.
----- api - Functions that fetch the data.
----- transform - Functions used to create features.
---- ml - transform, train and score
-
 FPL_predictions/
 │
 ├─ artifacts/
-│ ├─ fetched_data/
-│ ├─ ml_result/
+│   ├─ fetched_data/
+│   └─ ml_result/
 │
 ├─ notebook/
 │
-├─ src/
-│ ├─ components/
-│ │ ├─ data/
-│ │ │ ├─ api/
-│ │ │ ├─ transform/
-│ │ ├─ ml/
+└─ src/
+    ├─ components/
+    │   ├─ data/
+    │   │   ├─ api/
+    │   │   └─ transform/
+    │   └─ ml/
+
 
 
 ### FPL_predictions

@@ -28,12 +28,12 @@ pip install -r requirements.txt
 
 ## run project with docker
 
-Installed Docker (https://www.docker.com/get-started)
+Installed Docker https://www.docker.com/get-started
 
 ```
-docker build --pull --rm -f "Dockerfile" -t fplpredictions:latest "."
+docker build -t fplpredictions .
 
-docker run --rm -d  fplpredictions:latest
+docker run -d --name fpl_predictions_container fplpredictions:latest
 ```
 
 ## Folder structure
@@ -47,7 +47,54 @@ docker run --rm -d  fplpredictions:latest
 --- data - fetch data from API and transform data to train and score.
 ---- api - Functions that fetch the data.
 ---- transform - Functions used to create features.
----- ml - transform, train and score
+--- ml - transform, train and score
+
+FPL_predictions/
+│
+├─ artifacts/
+│ ├─ fetched_data/
+│ ├─ ml_result/
+│
+├─ notebook/
+│
+├─ src/
+│ ├─ components/
+│ │ ├─ data/
+│ │ │ ├─ api/
+│ │ │ ├─ transform/
+│ │ ├─ ml/
+
+
+### FPL_predictions
+
+Includes main.py and main.ipynb. The later is used for testing main.
+There could be som test_*.ipynb files which have been used for testing. 
+
+Other files are Dockerfile, .gitignore, LICENSE and requirements.txt. 
+
+
+### Artifacts
+
+- artifacts: Transformed data divided into train, test, validation and score. 
+- fetched_data: Fetched data by the API.
+- ml_results: Results (metrics, grid, feature importance) from the models from the latest run.  
+
+
+### notebook
+
+.ipynb-files used for EDA and testing and understanding of models. 
+
+
+### src
+
+src includes all  functions used in the project.
+
+- src: utils.py, includes general function used all over the project. 
+- components: divide data function from ml functions.
+- data: has fetch_data.py from fetching data with API, and transform_data which transformed the fetched data.
+- api: .py-files with functions used for fetching the data. Divided in to categories.
+- transform: .py-files with functions used for transformed the fetched data. Divided in to categories.
+- ml: .py-files with functions performing all ML-related activities. Like splitting traing, test and val, hyperparameter-tuning, evalutation and scoring.
 
 
 ## To do-list

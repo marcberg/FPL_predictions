@@ -31,9 +31,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score, precision_recall_curve, auc
 import xgboost as xgb # xgb.XGBClassifier
 
-src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-sys.path.append(src_path)
-
+import joblib
 
 from src.components.ml.metrics import evaluate_model_kpi
 
@@ -54,17 +52,17 @@ class DataIngest():
 
         print("create_train_and_test - Creating train, test, val and score")
         df=pd.read_csv(self.config.raw_data_path)
-        df_features = df.drop(["season_start_year","GW","id","team_h","team_a","train_score","home","away","kickoff_year","kickoff_month","kickoff_date"], axis=1)
-        #os.makedirs(os.path.dirname(self.ingestion_config.train_data_path), exist_ok=True)
 
-        train_set, test_set=train_test_split(df_features.loc[df.train_score == "train"],test_size=0.4,random_state=42)
+        train_set, test_set=train_test_split(df.loc[df.train_score == "train"],test_size=0.4,random_state=42)
         test_set, val_set=train_test_split(test_set,test_size=0.5,random_state=42)
 
         train_set.to_csv(self.config.train_data_path,index=False,header=True)
         test_set.to_csv(self.config.test_data_path,index=False,header=True)
         val_set.to_csv(self.config.val_data_path,index=False,header=True)
+
         
         score = df.loc[df.train_score == "score"]
+
         h = score[['id', 'team_h']].rename(columns={"team_h":"team"})
         a = score[['id', 'team_a']].rename(columns={"team_a":"team"})
 
@@ -72,7 +70,7 @@ class DataIngest():
         h_a['row_number'] = h_a.groupby('team').cumcount() + 1
 
         next_games = h_a.loc[(h_a['row_number'] == 1)]['id'].drop_duplicates()
-        teams_next_game = score.merge(next_games, on="id", how="inner")
+        teams_next_game = score.merge(next_games['id'], on="id", how="inner")
         teams_next_game.to_csv(self.config.score_data_path,index=False,header=True)
 
         print("create_train_and_test - DONE! \n")
@@ -115,10 +113,9 @@ def test_significant(df, feature, target):
 
 class DataTranformTrain():
 
-    def __init__(self, label, drop_labels_list, perform_cross_validation=True):        
+    def __init__(self, label, perform_cross_validation=True):        
         self.config=DataConfig()
         self.label = label
-        self.drop_labels_list = drop_labels_list
         self.perform_cross_validation = perform_cross_validation
 
 
@@ -135,7 +132,6 @@ class DataTranformTrain():
         categorical_columns = [feature for feature in train_df.columns if train_df[feature].dtype == 'O']
 
         features = numerical_columns + categorical_columns
-        features = [x for x in features if x not in self.drop_labels_list]
 
         p_values = pd.DataFrame()
         for p in features:
@@ -148,18 +144,25 @@ class DataTranformTrain():
 
     def preprocessor_pipeline(self, df):
 
+        dont_use_feature = ["season_start_year","GW","id","team_h","team_a","train_score","home","away","kickoff_year","kickoff_month","kickoff_date", 'label_1', 'label_X', 'label_2']
+        
         categorical_columns = [feature for feature in df.columns if df[feature].dtype == 'O']
+        categorical_columns = [x for x in categorical_columns if x not in dont_use_feature]
 
         games_terms = ['_games_overall_', '_games_home_', '_games_away_']
         games_features = [feature for feature in df.columns if any(term in feature for term in games_terms) & (df[feature].dtype != 'O')]
+        games_features = [x for x in games_features if x not in dont_use_feature]
 
         tbl_terms = ['tbl_']
         tbl_features = [feature for feature in df.columns if any(term in feature for term in tbl_terms) & (df[feature].dtype != 'O')]
+        tbl_features = [x for x in tbl_features if x not in dont_use_feature]
 
         player_terms = ['player_']
         player_features = [feature for feature in df.columns if any(term in feature for term in player_terms) & (df[feature].dtype != 'O')]
+        player_features = [x for x in player_features if x not in dont_use_feature]
 
         selected_numerical_columns = self.feature_selection_by_test()
+        selected_numerical_columns = [x for x in selected_numerical_columns if x not in dont_use_feature]
 
         num_pipeline= Pipeline(
             steps=[
@@ -201,7 +204,7 @@ class DataTranformTrain():
         test_df=pd.read_csv(self.config.test_data_path)
         val_df=pd.read_csv(self.config.val_data_path)
 
-        X = pd.concat([train_df, test_df]).drop(columns=self.drop_labels_list, axis=1).reset_index(drop=True)
+        X = pd.concat([train_df, test_df]).reset_index(drop=True)
         y = pd.concat([train_df, test_df])[self.label].reset_index(drop=True)
 
         indices_train = np.arange(train_df.shape[0])
@@ -212,7 +215,7 @@ class DataTranformTrain():
             preprocessor = self.preprocessor_pipeline(df = X)
             indices_train = indices_train.tolist() + indices_test.tolist()
         else:
-            preprocessor = self.preprocessor_pipeline(df = train_df.drop(columns=self.drop_labels_list, axis=1))
+            preprocessor = self.preprocessor_pipeline(df = train_df)
             indices_train = indices_train.tolist()
 
         return X, y, indices_train, indices_test, cv, preprocessor, val_df
@@ -256,43 +259,43 @@ class DataTranformTrain():
 
     def collect_and_save_feature_importance(self, final_pipeline, model_name):
         
-            feature_names = []
+        feature_names = []
 
-            num_feature_names = final_pipeline.named_steps['preprocessing'].transformers_[0][1].get_feature_names_out()
-            feature_names.extend(num_feature_names)
+        num_feature_names = final_pipeline.named_steps['preprocessing'].transformers_[0][1].get_feature_names_out()
+        feature_names.extend(num_feature_names)
 
-            games_pca_feature_names = ['games_pca_component_' + str(i) for i in range(5)]
-            feature_names.extend(games_pca_feature_names)
+        games_pca_feature_names = ['games_pca_component_' + str(i) for i in range(5)]
+        feature_names.extend(games_pca_feature_names)
 
-            tbl_pca_feature_names = ['tbl_pca_component_' + str(i) for i in range(5)]
-            feature_names.extend(tbl_pca_feature_names)
+        tbl_pca_feature_names = ['tbl_pca_component_' + str(i) for i in range(5)]
+        feature_names.extend(tbl_pca_feature_names)
 
-            player_pca_feature_names = ['player_pca_component_' + str(i) for i in range(5)]
-            feature_names.extend(player_pca_feature_names)
+        player_pca_feature_names = ['player_pca_component_' + str(i) for i in range(5)]
+        feature_names.extend(player_pca_feature_names)
 
-            # Get the feature names from the categorical pipeline (2023-07-15 - currently I have no categorical features)
-            try:
-                cat_feature_names = final_pipeline.named_steps['preprocessing'].transformers_[4][1].named_steps['one_hot_encoder'].get_feature_names_out()
-                feature_names.extend(cat_feature_names)
-            except:
-                pass
+        # Get the feature names from the categorical pipeline (2023-07-15 - currently I have no categorical features)
+        try:
+            cat_feature_names = final_pipeline.named_steps['preprocessing'].transformers_[4][1].named_steps['one_hot_encoder'].get_feature_names_out()
+            feature_names.extend(cat_feature_names)
+        except:
+            pass
 
-            if model_name == "Logistic Regression":
-                coefficients = final_pipeline.named_steps['model'].coef_[0]
-                fi = pd.DataFrame({
-                    'Feature': feature_names,
-                    'Coefficients': coefficients,
-                    'Abs coefficients': np.abs(coefficients)
-                })
-                fi = fi.sort_values('Abs coefficients', ascending=False).reset_index(drop=True)
-            else:
-                feature_importance = final_pipeline.named_steps['model'].feature_importances_
-                fi = pd.DataFrame({
-                    'Feature': feature_names,
-                    'Feature importance': feature_importance,
-                })
-                fi = fi.sort_values('Feature importance', ascending=False).reset_index(drop=True)
-            fi.to_excel('artifacts/ml_results/{0}/{1} - Feature importance.xlsx'.format(self.label, model_name), index=False)
+        if model_name == "Logistic Regression":
+            coefficients = final_pipeline.named_steps['model'].coef_[0]
+            fi = pd.DataFrame({
+                'Feature': feature_names,
+                'Coefficients': coefficients,
+                'Abs coefficients': np.abs(coefficients)
+            })
+            fi = fi.sort_values('Abs coefficients', ascending=False).reset_index(drop=True)
+        else:
+            feature_importance = final_pipeline.named_steps['model'].feature_importances_
+            fi = pd.DataFrame({
+                'Feature': feature_names,
+                'Feature importance': feature_importance,
+            })
+            fi = fi.sort_values('Feature importance', ascending=False).reset_index(drop=True)
+        fi.to_excel('artifacts/ml_results/{0}/{1} - Feature importance.xlsx'.format(self.label, model_name), index=False)
 
 
     def grid_search(self, models, params, save_to_mlflow=True):
@@ -323,6 +326,7 @@ class DataTranformTrain():
             print("- Hyperparameter-tuning")
             grid.fit(X, y)
 
+
             print("- Select best hyperparameters")
             nbp = self.select_param_from_grid(grid=grid, model_name=list(models.keys())[i])
 
@@ -332,7 +336,11 @@ class DataTranformTrain():
                 ('model', model.set_params(**nbp))
             ])
             final_pipeline.fit(X.iloc[indices_train], y.iloc[indices_train])
-            algo_best_model.append((list(models.keys())[i], final_pipeline))
+
+            # Save the pipeline to a file
+            joblib.dump(final_pipeline, 'artifacts/ml_results/{0}/{1}.pkl'.format(self.label, list(models.keys())[i]))
+
+            algo_best_model.append((list(models.keys())[i], final_pipeline))        
 
             print("- Calculating metrics \n")
             metric = self.calculate_and_save_metrics(final_pipeline, X, y, indices_train, val_df, model_name=list(models.keys())[i])
@@ -357,14 +365,14 @@ class DataTranformTrain():
 
         all_algo_metrics.to_excel('artifacts/ml_results/{0}/all_algo_metrics.xlsx'.format(self.label), index=False)
 
-        return algo_best_model
+        return algo_best_model, all_algo_metrics
     
     
 if __name__=='__main__':
     obj=DataIngest()
     train_data,test_data,val_data,score_data=obj.create_train_and_test()
 
-    TransformTrain = DataTranformTrain(label = 'label_1', drop_labels_list = ['label_1', 'label_X', 'label_2'], perform_cross_validation=True)
+    TransformTrain = DataTranformTrain(label = 'label_1', perform_cross_validation=True)
     algo_best_model_metric, algo_best_param, algo_best_model = TransformTrain.grid_search()
 
     print(algo_best_model_metric)

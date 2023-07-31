@@ -60,7 +60,6 @@ class DataIngest():
         test_set.to_csv(self.config.test_data_path,index=False,header=True)
         val_set.to_csv(self.config.val_data_path,index=False,header=True)
 
-        
         score = df.loc[df.train_score == "score"]
 
         h = score[['id', 'team_h']].rename(columns={"team_h":"team"})
@@ -70,7 +69,7 @@ class DataIngest():
         h_a['row_number'] = h_a.groupby('team').cumcount() + 1
 
         next_games = h_a.loc[(h_a['row_number'] == 1)]['id'].drop_duplicates()
-        teams_next_game = score.merge(next_games['id'], on="id", how="inner")
+        teams_next_game = score.merge(pd.DataFrame(next_games), on="id", how="inner")
         teams_next_game.to_csv(self.config.score_data_path,index=False,header=True)
 
         print("create_train_and_test - DONE! \n")
@@ -364,8 +363,6 @@ class DataTranformTrain():
                 mlflow.end_run()
 
         all_algo_metrics.to_excel('artifacts/ml_results/{0}/all_algo_metrics.xlsx'.format(self.label), index=False)
-
-        return algo_best_model, all_algo_metrics
     
     
 if __name__=='__main__':

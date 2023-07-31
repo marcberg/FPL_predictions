@@ -85,15 +85,19 @@ data_ingest = DataIngest()
 data_ingest.create_train_and_test()  
 
 algo_1 = DataTranformTrain(label = 'label_1')
-algo_best_model_1, all_algo_metrics_1 = algo_1.grid_search(models=models, params=params, save_to_mlflow=False)
+algo_1.grid_search(models=models, params=params, save_to_mlflow=False)
 
 algo_X = DataTranformTrain(label = 'label_X')
-algo_best_model_X, all_algo_metrics_X = algo_X.grid_search(models=models, params=params, save_to_mlflow=False)
+algo_X.grid_search(models=models, params=params, save_to_mlflow=False)
 
 algo_2 = DataTranformTrain(label = 'label_2')
-algo_best_model_2, all_algo_metrics_2 = algo_2.grid_search(models=models, params=params, save_to_mlflow=False)
+algo_2.grid_search(models=models, params=params, save_to_mlflow=False)
 
 # Select algo that performs best overall 
+all_algo_metrics_1 = pd.read_excel("artifacts/ml_results/label_1/all_algo_metrics.xlsx")
+all_algo_metrics_X = pd.read_excel("artifacts/ml_results/label_X/all_algo_metrics.xlsx")
+all_algo_metrics_2 = pd.read_excel("artifacts/ml_results/label_2/all_algo_metrics.xlsx")
+
 concat_matrics = pd.concat([all_algo_metrics_1, all_algo_metrics_X, all_algo_metrics_2])
 calculate_total_metrics = concat_matrics.groupby("Algorithm", as_index=False)["AUC-ROC Val"].sum()
 rearrange_metrics = calculate_total_metrics.sort_values("AUC-ROC Val", ascending=False)["Algorithm"].reset_index(drop=True)

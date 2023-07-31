@@ -6,9 +6,9 @@ We will use the models to score each teams next game.
 This project is created for me to learn more about different parts within ML-projects. Not focusing on doing best possible models. 
 My personal goal with this project is to start using:
 - mlflow
-- docker
+- Docker
 - Tensorflow
-- organising a ML project with Python
+- Organising a ML project with Python
 - Setup enviroments
 - Automate project
 
@@ -91,9 +91,7 @@ src includes all  functions used in the project.
 ## To do-list
 
 - Improve the training-part.
-- Divide training-part into several functions instead of one big.
 - Document code and functions.
 - Improve main.py as pipeline.
 - Automate with Github actions
 - Build airflow-flow just to learn airflow.
-- don't re-run hold seasons data -> add data cumulative.

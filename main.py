@@ -14,13 +14,13 @@ from src.components.data.api.round_functions import get_round_info
 # Fetch data-functions
 from src.components.data.fetch_data import fetch_data
 
-fetch_data(get_game_list)
-fetch_data(get_player_details)
-fetch_data(get_player_hist, season_specific=False)
-fetch_data(get_player_info)
-fetch_data(get_player_id, season_specific=False)
-fetch_data(get_player_name, season_specific=False)
-fetch_data(get_round_info)
+fetch_data(get_game_list, id_list = ["id","team_h","team_a","season_start_year"])
+fetch_data(get_player_details, id_list = ["season_start_year","element","fixture"])
+fetch_data(get_player_hist, id_list = ["season_name","element_code"], season_specific=False)
+fetch_data(get_player_info, id_list = ["season_start_year", "id"])
+fetch_data(get_player_id, id_list = ["id"], season_specific=False)
+fetch_data(get_player_name, id_list = ["id"], season_specific=False)
+fetch_data(get_round_info, id_list = ["id", "season_start_year"])
 
 # Transform data
 from src.components.data.transform_data import create_data

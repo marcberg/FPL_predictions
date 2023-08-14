@@ -17,23 +17,24 @@ My personal goal with this project is to start using:
 Setup enviroment and install packages
 
 ```
-conda create -p venv python==3.10 -y
+conda create -name venv python==3.10 -y
 
-conda activate venv/
+conda activate venv
 
 conda install ipykernel -y
 
 pip install -r requirements.txt
 ```
 
-## run project with docker
+## Docker
 
 Installed Docker https://www.docker.com/get-started
 
+Run main.py
 ```
-docker build -t fplpredictions .
+docker build -t fpl_main_image -f Dockerfile.main .
 
-docker run -d --name fpl_predictions_container fplpredictions:latest
+docker run --name fpl_main_container fpl_main_image
 ```
 
 ## Folder structure
@@ -93,5 +94,5 @@ src includes all  functions used in the project.
 - Improve the training-part.
 - Document code and functions.
 - Improve main.py as pipeline.
-- Automate with Github actions
+- Automate with Github actions.
 - Build airflow-flow just to learn airflow.

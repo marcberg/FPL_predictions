@@ -72,7 +72,10 @@ class DataIngest():
         teams_next_game = score.merge(pd.DataFrame(next_games), on="id", how="inner")
         teams_next_game.to_csv(self.config.score_data_path,index=False,header=True)
 
-        print("create_train_and_test - DONE! \n")
+        print("train: " + str(train_set.shape[0]) + " rows")
+        print("test: " + str(test_set.shape[0]) + " rows")
+        print("val: " + str(val_set.shape[0]) + " rows \n")
+
         return(
             self.config.train_data_path,
             self.config.test_data_path,

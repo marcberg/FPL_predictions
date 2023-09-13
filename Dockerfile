@@ -1,16 +1,15 @@
-# Use the official Python 3.10 image as a base
-FROM python:3.10
-# FROM python:3.10-slim
+# Use the official Apache Airflow image
+FROM apache/airflow:2.7.0
 
-# Set the working directory inside the container
+
+
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy the entire project directory into the container at /app
-COPY . /app
+# Copy your DAGs and other files into the container
+COPY . .
 
-# Install required Python dependencies
-RUN pip install -r requirements.txt
+COPY requirements.txt .
 
-# Set the command to run your ML project
-# CMD ["python", "main.py"]
-CMD ["python", "main_test_docker.py"]
+# Install required packages from requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt

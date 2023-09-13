@@ -37,6 +37,21 @@ docker build -t fpl_main_image -f Dockerfile.main .
 docker run --name fpl_main_container fpl_main_image
 ```
 
+## airflow
+
+```
+docker compose up airflow-init
+
+docker compose up
+```
+
+open a new terminal to check it's up and running
+```
+docker ps
+```
+
+open webbrowser and go to localhost:8080
+
 ## Folder structure
 
 ```

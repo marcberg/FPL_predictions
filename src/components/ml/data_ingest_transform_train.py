@@ -23,7 +23,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
@@ -300,7 +300,7 @@ class DataTranformTrain():
         fi.to_excel('artifacts/ml_results/{0}/{1} - Feature importance.xlsx'.format(self.label, model_name), index=False)
 
 
-    def grid_search(self, models, params, save_to_mlflow=True):
+    def grid_search(self, models, params, save_to_mlflow=True, random_grid=False, n_random_hyperparameters=10):
 
         X, y, indices_train, indices_test, cv, preprocessor, val_df = self.adjust_train_test()
 
@@ -321,9 +321,15 @@ class DataTranformTrain():
             ])
 
             if self.perform_cross_validation:
-                grid = GridSearchCV(estimator = pipeline, param_grid = param, cv = 3, n_jobs = -1, scoring = 'roc_auc', error_score="raise", return_train_score=True)
+                if random_grid:
+                    grid = RandomizedSearchCV(estimator = pipeline, param_distributions = param, n_iter=n_random_hyperparameters, cv = 3, n_jobs = -1, scoring = 'roc_auc', error_score="raise", return_train_score=True, verbose=-1)
+                else:
+                    grid = GridSearchCV(estimator = pipeline, param_grid = param, cv = 3, n_jobs = -1, scoring = 'roc_auc', error_score="raise", return_train_score=True, verbose=-1)
             else:
-                grid = GridSearchCV(estimator = pipeline, param_grid = param, cv = cv, scoring = 'roc_auc', error_score="raise", return_train_score=True)
+                if random_grid:
+                    grid = RandomizedSearchCV(estimator = pipeline, param_distributions = param, n_iter=n_random_hyperparameters, cv = cv, scoring = 'roc_auc', error_score="raise", return_train_score=True, verbose=-1)
+                else:
+                    grid = GridSearchCV(estimator = pipeline, param_grid = param, cv = cv, scoring = 'roc_auc', error_score="raise", return_train_score=True, verbose=-1)
             
             print("- Hyperparameter-tuning")
             grid.fit(X, y)

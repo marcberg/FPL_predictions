@@ -17,7 +17,7 @@ My personal goal with this project is to start using:
 Setup enviroment and install packages
 
 ```
-conda create -name venv python==3.10 -y
+conda create --name venv python=3.10 -y
 
 conda activate venv
 

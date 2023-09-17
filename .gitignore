@@ -164,8 +164,9 @@ cython_debug/
 
 
 # Excel
-# Ignore CSV files
+# Ignore CSV files except earlier fetched data (since data can be removed)
 *.csv
+!artifacts/fetched_data/*.csv
 
 # Ignore XLSX files
 *.xlsx

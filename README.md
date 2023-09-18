@@ -61,6 +61,8 @@ FPL_predictions/
 │   ├─ fetched_data/
 │   └─ ml_result/
 │
+├─ dags/
+│
 ├─ notebook/
 │
 └─ src/

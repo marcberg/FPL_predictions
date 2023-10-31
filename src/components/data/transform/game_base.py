@@ -17,6 +17,8 @@ def games_base():
     games['label_X'] = np.where(games['team_h_score'] == games['team_a_score'], 1, 0)
     games['label_2'] = np.where(games['team_h_score'] < games['team_a_score'], 1, 0)
     games['train_score'] = np.where(games['finished'], 'train', 'score')
+    games['season'] = games['season_start_year'].astype(str)
+
 
     games_base = games[[
         # id
@@ -36,6 +38,7 @@ def games_base():
         # features
         'home',  
         'away', 
+        'season',
         'kickoff_year', 
         'kickoff_month', 
         'rounds_left']]

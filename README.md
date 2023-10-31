@@ -5,12 +5,14 @@ We will use the models to score each teams next game.
 
 This project is created for me to learn more about different parts within ML-projects. Not focusing on doing best possible models. 
 My personal goal with this project is to start using:
+- Git
 - mlflow
 - Docker
 - Tensorflow
 - Organising a ML project with Python
 - Setup enviroments
 - Automate project
+- Explain models with SHAP and partial dependency
 
 ## Enviroment & libraries
 
@@ -88,6 +90,9 @@ Other files are Dockerfile, .gitignore, LICENSE and requirements.txt.
 - fetched_data: Fetched data by the API.
 - ml_results: Results (metrics, grid, feature importance) from the models from the latest run.  
 
+### dags
+
+My airflow dags. NOT WORKING RIGHT NOW.
 
 ### notebook
 
@@ -109,7 +114,13 @@ src includes all  functions used in the project.
 ## To do-list
 
 - Improve the training-part.
+    - Feature selection
+        - Is "season" not in it?
+        - No games-features are selected?
+    - Interactions
+    - Hyperparameters grid
+    - Split up functions into multiple functions
 - Document code and functions.
-- Improve main.py as pipeline.
-- Automate with Github actions.
 - Build airflow-flow just to learn airflow.
+- Improve prints (incl. removing warnings)
+- Run & debug

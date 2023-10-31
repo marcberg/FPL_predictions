@@ -168,8 +168,6 @@ cython_debug/
 *.csv
 !artifacts/fetched_data/*.csv
 
-# Ignore XLSX files
 *.xlsx
-
-# Ignore .pkl-files
 *.pkl
+*.png

@@ -14,13 +14,21 @@ def tbl_interactions_features(df, features, interaction_with, prefix):
 def create_data():
 
     print("Create_data - Games base")
-    base = games_base()
+    data = games_base()
 
     print("Create_data - Team form")
     form = team_form
-    home_team_form, away_team_form = form.overall_form()
-    home_team_home_form = form.home_away_form(home_team=1)
-    away_team_away_form = form.home_away_form(home_team=0)
+    home_team_form_3, away_team_form_3 = form.overall_form(last_n_games=3)
+    home_team_home_form_3 = form.home_away_form(last_n_games=3, home_team=1)
+    away_team_away_form_3 = form.home_away_form(last_n_games=3, home_team=0)
+
+    home_team_form_5, away_team_form_5 = form.overall_form(last_n_games=5)
+    home_team_home_form_5 = form.home_away_form(last_n_games=5, home_team=1)
+    away_team_away_form_5 = form.home_away_form(last_n_games=5, home_team=0)
+
+    home_team_form_10, away_team_form_10 = form.overall_form(last_n_games=10)
+    home_team_home_form_10 = form.home_away_form(last_n_games=10, home_team=1)
+    away_team_away_form_10 = form.home_away_form(last_n_games=10, home_team=0)
 
     print("Create_data - Table")
     table_features = table()
@@ -30,10 +38,20 @@ def create_data():
 
     print("Create_data - Merging and interactions")
     # merge form
-    data = base.merge(home_team_form, left_on=['season_start_year', 'team_h', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id'], how='inner').drop(['next_id', 'team_id_season'], axis=1)
-    data = data.merge(away_team_form, left_on=['season_start_year', 'team_a', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id'], how='inner').drop(['next_id', 'team_id_season'], axis=1)
-    data = data.merge(home_team_home_form, left_on=['season_start_year', 'team_h', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id_home'], how='inner').drop(['next_id_home', 'team_id_season'], axis=1)
-    data = data.merge(away_team_away_form, left_on=['season_start_year', 'team_a', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id_away'], how='inner').drop(['next_id_away', 'team_id_season'], axis=1)
+    #data = data.merge(home_team_form_3, left_on=['season_start_year', 'team_h', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id'], how='inner').drop(['next_id', 'team_id_season'], axis=1)
+    #data = data.merge(away_team_form_3, left_on=['season_start_year', 'team_a', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id'], how='inner').drop(['next_id', 'team_id_season'], axis=1)
+    #data = data.merge(home_team_home_form_3, left_on=['season_start_year', 'team_h', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id_home'], how='inner').drop(['next_id_home', 'team_id_season'], axis=1)
+    #data = data.merge(away_team_away_form_3, left_on=['season_start_year', 'team_a', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id_away'], how='inner').drop(['next_id_away', 'team_id_season'], axis=1)
+    
+    data = data.merge(home_team_form_5, left_on=['season_start_year', 'team_h', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id'], how='inner').drop(['next_id', 'team_id_season'], axis=1)
+    data = data.merge(away_team_form_5, left_on=['season_start_year', 'team_a', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id'], how='inner').drop(['next_id', 'team_id_season'], axis=1)
+    data = data.merge(home_team_home_form_5, left_on=['season_start_year', 'team_h', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id_home'], how='inner').drop(['next_id_home', 'team_id_season'], axis=1)
+    data = data.merge(away_team_away_form_5, left_on=['season_start_year', 'team_a', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id_away'], how='inner').drop(['next_id_away', 'team_id_season'], axis=1)
+    
+    #data = data.merge(home_team_form_10, left_on=['season_start_year', 'team_h', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id'], how='inner').drop(['next_id', 'team_id_season'], axis=1)
+    #data = data.merge(away_team_form_10, left_on=['season_start_year', 'team_a', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id'], how='inner').drop(['next_id', 'team_id_season'], axis=1)
+    #data = data.merge(home_team_home_form_10, left_on=['season_start_year', 'team_h', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id_home'], how='inner').drop(['next_id_home', 'team_id_season'], axis=1)
+    #data = data.merge(away_team_away_form_10, left_on=['season_start_year', 'team_a', 'id'], right_on=['season_start_year', 'team_id_season', 'next_id_away'], how='inner').drop(['next_id_away', 'team_id_season'], axis=1)
 
     # merge table
     data = data.merge(table_features.add_prefix('tbl_home_'), left_on=['season_start_year', 'kickoff_date', 'team_h'], right_on=['tbl_home_season_start_year', 'tbl_home_next_kickoff_date', 'tbl_home_team_id_season'], how='inner')

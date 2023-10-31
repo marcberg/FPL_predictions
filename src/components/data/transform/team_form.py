@@ -35,52 +35,52 @@ class team_form():
     
     team_games = data_setup()
     
-    def overall_form(team_games=team_games):
+    def overall_form(last_n_games, team_games=team_games):
         '''
         
         '''
         overall_form = team_games.sort_values(['season_start_year', 'team_id_season', 'kickoff']).reset_index(drop=True)
 
-        overall_form['win_share_latest_5_games'] = overall_form.groupby(['season_start_year', 'team_id_season'])['win'].rolling(window=5, min_periods=1).mean().reset_index(drop=True)
-        overall_form['draw_share_latest_5_games'] = overall_form.groupby(['season_start_year', 'team_id_season'])['draw'].rolling(window=5, min_periods=1).mean().reset_index(drop=True)
-        overall_form['loss_share_latest_5_games'] = overall_form.groupby(['season_start_year', 'team_id_season'])['loss'].rolling(window=5, min_periods=1).mean().reset_index(drop=True)
+        overall_form['win_share_latest_{0}_games'.format(last_n_games)] = overall_form.groupby(['season_start_year', 'team_id_season'])['win'].rolling(window=last_n_games, min_periods=1).mean().reset_index(drop=True)
+        overall_form['draw_share_latest_{0}_games'.format(last_n_games)] = overall_form.groupby(['season_start_year', 'team_id_season'])['draw'].rolling(window=last_n_games, min_periods=1).mean().reset_index(drop=True)
+        overall_form['loss_share_latest_{0}_games'.format(last_n_games)] = overall_form.groupby(['season_start_year', 'team_id_season'])['loss'].rolling(window=last_n_games, min_periods=1).mean().reset_index(drop=True)
 
-        overall_form['avg_goals_scored_latest_5_games'] = overall_form.groupby(['season_start_year', 'team_id_season'])['goals_scored'].rolling(window=5, min_periods=1).mean().reset_index(drop=True)
-        overall_form['avg_goals_conceded_latest_5_games'] = overall_form.groupby(['season_start_year', 'team_id_season'])['goals_conceded'].rolling(window=5, min_periods=1).mean().reset_index(drop=True)
+        overall_form['avg_goals_scored_latest_{0}_games'.format(last_n_games)] = overall_form.groupby(['season_start_year', 'team_id_season'])['goals_scored'].rolling(window=last_n_games, min_periods=1).mean().reset_index(drop=True)
+        overall_form['avg_goals_conceded_latest_{0}_games'.format(last_n_games)] = overall_form.groupby(['season_start_year', 'team_id_season'])['goals_conceded'].rolling(window=last_n_games, min_periods=1).mean().reset_index(drop=True)
 
         home_team_form = overall_form.rename(columns={
-                                'win_share_latest_5_games':'win_share_latest_5_games_overall_home_team', 
-                                'draw_share_latest_5_games':'draw_share_latest_5_games_overall_home_team', 
-                                'loss_share_latest_5_games':'loss_share_latest_5_games_overall_home_team', 
-                                'avg_goals_scored_latest_5_games':'avg_goals_scored_latest_5_games_overall_home_team', 
-                                'avg_goals_conceded_latest_5_games':'avg_goals_conceded_latest_5_games_overall_home_team'})
+                                'win_share_latest_{0}_games'.format(last_n_games):'win_share_latest_{0}_games_overall_home_team'.format(last_n_games), 
+                                'draw_share_latest_{0}_games'.format(last_n_games):'draw_share_latest_{0}_games_overall_home_team'.format(last_n_games), 
+                                'loss_share_latest_{0}_games'.format(last_n_games):'loss_share_latest_{0}_games_overall_home_team'.format(last_n_games), 
+                                'avg_goals_scored_latest_{0}_games'.format(last_n_games):'avg_goals_scored_latest_{0}_games_overall_home_team'.format(last_n_games), 
+                                'avg_goals_conceded_latest_{0}_games'.format(last_n_games):'avg_goals_conceded_latest_{0}_games_overall_home_team'.format(last_n_games)})
         home_team_form = home_team_form[['team_id_season', 
                                             'next_id', 
                                             'season_start_year', 
-                                            'win_share_latest_5_games_overall_home_team', 
-                                            'draw_share_latest_5_games_overall_home_team', 
-                                            'loss_share_latest_5_games_overall_home_team', 
-                                            'avg_goals_scored_latest_5_games_overall_home_team', 
-                                            'avg_goals_conceded_latest_5_games_overall_home_team']]
+                                            'win_share_latest_{0}_games_overall_home_team'.format(last_n_games), 
+                                            'draw_share_latest_{0}_games_overall_home_team'.format(last_n_games), 
+                                            'loss_share_latest_{0}_games_overall_home_team'.format(last_n_games), 
+                                            'avg_goals_scored_latest_{0}_games_overall_home_team'.format(last_n_games), 
+                                            'avg_goals_conceded_latest_{0}_games_overall_home_team'.format(last_n_games)]]
 
         away_team_form = overall_form.rename(columns={
-                                'win_share_latest_5_games':'win_share_latest_5_games_overall_away_team', 
-                                'draw_share_latest_5_games':'draw_share_latest_5_games_overall_away_team', 
-                                'loss_share_latest_5_games':'loss_share_latest_5_games_overall_away_team', 
-                                'avg_goals_scored_latest_5_games':'avg_goals_scored_latest_5_games_overall_away_team', 
-                                'avg_goals_conceded_latest_5_games':'avg_goals_conceded_latest_5_games_overall_away_team'})
+                                'win_share_latest_{0}_games'.format(last_n_games):'win_share_latest_{0}_games_overall_away_team'.format(last_n_games), 
+                                'draw_share_latest_{0}_games'.format(last_n_games):'draw_share_latest_{0}_games_overall_away_team'.format(last_n_games), 
+                                'loss_share_latest_{0}_games'.format(last_n_games):'loss_share_latest_{0}_games_overall_away_team'.format(last_n_games), 
+                                'avg_goals_scored_latest_{0}_games'.format(last_n_games):'avg_goals_scored_latest_{0}_games_overall_away_team'.format(last_n_games), 
+                                'avg_goals_conceded_latest_{0}_games'.format(last_n_games):'avg_goals_conceded_latest_{0}_games_overall_away_team'.format(last_n_games)})
         away_team_form = away_team_form[['team_id_season', 
                                             'next_id', 
                                             'season_start_year', 
-                                            'win_share_latest_5_games_overall_away_team', 
-                                            'draw_share_latest_5_games_overall_away_team', 
-                                            'loss_share_latest_5_games_overall_away_team', 
-                                            'avg_goals_scored_latest_5_games_overall_away_team', 
-                                            'avg_goals_conceded_latest_5_games_overall_away_team']]
+                                            'win_share_latest_{0}_games_overall_away_team'.format(last_n_games), 
+                                            'draw_share_latest_{0}_games_overall_away_team'.format(last_n_games), 
+                                            'loss_share_latest_{0}_games_overall_away_team'.format(last_n_games), 
+                                            'avg_goals_scored_latest_{0}_games_overall_away_team'.format(last_n_games), 
+                                            'avg_goals_conceded_latest_{0}_games_overall_away_team'.format(last_n_games)]]
         
         return home_team_form, away_team_form
     
-    def home_away_form(home_team, team_games=team_games):
+    def home_away_form(home_team, last_n_games, team_games=team_games):
         '''
         
         '''
@@ -93,21 +93,21 @@ class team_form():
         games = team_games.loc[team_games.home == home_team].sort_values(['season_start_year', 'team_id_season', 'kickoff']).reset_index(drop=True)
         games['next_id_{0}'.format(team)] = games.groupby('team_id_season')['id'].shift(-1)
 
-        games['win_share_latest_5_games_{0}_{0}_team'.format(team)] = games.groupby(['season_start_year', 'team_id_season'])['win'].rolling(window=5, min_periods=1).mean().reset_index(drop=True)
-        games['draw_share_latest_5_games_{0}_{0}_team'.format(team)] = games.groupby(['season_start_year', 'team_id_season'])['draw'].rolling(window=5, min_periods=1).mean().reset_index(drop=True)
-        games['loss_share_latest_5_games_{0}_{0}_team'.format(team)] = games.groupby(['season_start_year', 'team_id_season'])['loss'].rolling(window=5, min_periods=1).mean().reset_index(drop=True)
+        games['win_share_latest_{1}_games_{0}_{0}_team'.format(team, last_n_games)] = games.groupby(['season_start_year', 'team_id_season'])['win'].rolling(window=last_n_games, min_periods=1).mean().reset_index(drop=True)
+        games['draw_share_latest_{1}_games_{0}_{0}_team'.format(team, last_n_games)] = games.groupby(['season_start_year', 'team_id_season'])['draw'].rolling(window=last_n_games, min_periods=1).mean().reset_index(drop=True)
+        games['loss_share_latest_{1}_games_{0}_{0}_team'.format(team, last_n_games)] = games.groupby(['season_start_year', 'team_id_season'])['loss'].rolling(window=last_n_games, min_periods=1).mean().reset_index(drop=True)
 
-        games['avg_goals_scored_latest_5_games_{0}_{0}_team'.format(team)] = games.groupby(['season_start_year', 'team_id_season'])['goals_scored'].rolling(window=5, min_periods=1).mean().reset_index(drop=True)
-        games['avg_goals_conceded_latest_5_games_{0}_{0}_team'.format(team)] = games.groupby(['season_start_year', 'team_id_season'])['goals_conceded'].rolling(window=5, min_periods=1).mean().reset_index(drop=True)
+        games['avg_goals_scored_latest_{1}_games_{0}_{0}_team'.format(team, last_n_games)] = games.groupby(['season_start_year', 'team_id_season'])['goals_scored'].rolling(window=last_n_games, min_periods=1).mean().reset_index(drop=True)
+        games['avg_goals_conceded_latest_{1}_games_{0}_{0}_team'.format(team, last_n_games)] = games.groupby(['season_start_year', 'team_id_season'])['goals_conceded'].rolling(window=last_n_games, min_periods=1).mean().reset_index(drop=True)
 
         games = games[['team_id_season', 
                                 'next_id_{0}'.format(team), 
                                 'season_start_year', 
-                                'win_share_latest_5_games_{0}_{0}_team'.format(team), 
-                                'draw_share_latest_5_games_{0}_{0}_team'.format(team), 
-                                'loss_share_latest_5_games_{0}_{0}_team'.format(team), 
-                                'avg_goals_scored_latest_5_games_{0}_{0}_team'.format(team), 
-                                'avg_goals_conceded_latest_5_games_{0}_{0}_team'.format(team)]]
+                                'win_share_latest_{1}_games_{0}_{0}_team'.format(team, last_n_games), 
+                                'draw_share_latest_{1}_games_{0}_{0}_team'.format(team, last_n_games), 
+                                'loss_share_latest_{1}_games_{0}_{0}_team'.format(team, last_n_games), 
+                                'avg_goals_scored_latest_{1}_games_{0}_{0}_team'.format(team, last_n_games), 
+                                'avg_goals_conceded_latest_{1}_games_{0}_{0}_team'.format(team, last_n_games)]]
 
         return games
 

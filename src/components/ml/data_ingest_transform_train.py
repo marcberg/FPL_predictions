@@ -10,7 +10,7 @@ import logging
 logging.getLogger("mlflow").setLevel(logging.ERROR)
 
 import warnings
-warnings.filterwarnings("ignore", category=UserWarning, module="_distutils_hack")
+warnings.filterwarnings("ignore")
 
 from pandas.api.types import is_string_dtype
 from pandas.api.types import is_numeric_dtype
@@ -23,15 +23,20 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, PredefinedSplit
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score, precision_recall_curve, auc
+from sklearn.inspection import PartialDependenceDisplay
 import xgboost as xgb # xgb.XGBClassifier
 
 import joblib
+
+import shap
+
+import matplotlib.pyplot as plt
 
 from src.components.ml.metrics import evaluate_model_kpi
 
@@ -121,17 +126,17 @@ class DataTranformTrain():
         self.perform_cross_validation = perform_cross_validation
 
 
-    def feature_selection_by_test(self, select_p_value=0.05):
+    def feature_selection_by_test(self, dont_test_columns, select_p_value=0.05):
 
-        print("- Calculating significant features")
+        print("- Calculating significant features \n")
         train_df=pd.read_csv(self.config.train_data_path)
 
         if self.perform_cross_validation:
             test_df=pd.read_csv(self.config.test_data_path)
             train_df = pd.concat([train_df, test_df]).reset_index(drop=True)
 
-        numerical_columns = [feature for feature in train_df.columns if train_df[feature].dtype != 'O']
-        categorical_columns = [feature for feature in train_df.columns if train_df[feature].dtype == 'O']
+        numerical_columns = [feature for feature in train_df.columns if train_df[feature].dtype != 'O' and feature not in dont_test_columns]
+        categorical_columns = [feature for feature in train_df.columns if train_df[feature].dtype == 'O' and feature not in dont_test_columns]
 
         features = numerical_columns + categorical_columns
 
@@ -140,16 +145,19 @@ class DataTranformTrain():
             p_value = test_significant(train_df, p, self.label)
             p_values = pd.concat([p_values, p_value]).reset_index(drop=True)
 
+        p_values.to_excel('artifacts/ml_results/{0}/significant_test.xlsx'.format(self.label), index=False)
+
         selected_features = p_values.loc[p_values["PR(>F)"] < select_p_value]["feature"].to_list()
         return selected_features
     
 
     def preprocessor_pipeline(self, df):
 
-        dont_use_feature = ["season_start_year","GW","id","team_h","team_a","train_score","home","away","kickoff_year","kickoff_month","kickoff_date", 'label_1', 'label_X', 'label_2']
+        dont_use_feature = ["season_start_year","GW","id","team_h","team_a", "home", "away", "train_score","kickoff_year","kickoff_month","kickoff_date", 'label_1', 'label_X', 'label_2']
         
-        categorical_columns = [feature for feature in df.columns if df[feature].dtype == 'O']
-        categorical_columns = [x for x in categorical_columns if x not in dont_use_feature]
+        significant_features = self.feature_selection_by_test(dont_test_columns=dont_use_feature)
+        selected_numerical_columns = [x for x in df.columns if (df[x].dtype != 'O') & (x not in dont_use_feature) & (x in significant_features)]
+        categorical_columns = [x for x in df.columns if (df[x].dtype == 'O') & (x not in dont_use_feature) & (x in significant_features)]
 
         games_terms = ['_games_overall_', '_games_home_', '_games_away_']
         games_features = [feature for feature in df.columns if any(term in feature for term in games_terms) & (df[feature].dtype != 'O')]
@@ -162,9 +170,6 @@ class DataTranformTrain():
         player_terms = ['player_']
         player_features = [feature for feature in df.columns if any(term in feature for term in player_terms) & (df[feature].dtype != 'O')]
         player_features = [x for x in player_features if x not in dont_use_feature]
-
-        selected_numerical_columns = self.feature_selection_by_test()
-        selected_numerical_columns = [x for x in selected_numerical_columns if x not in dont_use_feature]
 
         num_pipeline= Pipeline(
             steps=[
@@ -209,25 +214,25 @@ class DataTranformTrain():
         X = pd.concat([train_df, test_df]).reset_index(drop=True)
         y = pd.concat([train_df, test_df])[self.label].reset_index(drop=True)
 
-        indices_train = np.arange(train_df.shape[0])
-        indices_test = np.arange(test_df.shape[0], train_df.shape[0]+test_df.shape[0])
-        cv = [(indices_train, indices_test)]
+        indices_train = np.full((train_df.shape[0],), -1, dtype=int)
+        indices_test = np.full((test_df.shape[0],), -1, dtype=int)
+
+        test_fold = np.append(indices_train, indices_test)
+        ps = PredefinedSplit(test_fold)
 
         if self.perform_cross_validation:
             preprocessor = self.preprocessor_pipeline(df = X)
-            indices_train = indices_train.tolist() + indices_test.tolist()
         else:
             preprocessor = self.preprocessor_pipeline(df = train_df)
-            indices_train = indices_train.tolist()
 
-        return X, y, indices_train, indices_test, cv, preprocessor, val_df
+        return X, y, ps, preprocessor, val_df
     
 
     def select_param_from_grid(self, grid, model_name):
 
         cv_results = pd.DataFrame(grid.cv_results_).sort_values(by=["rank_test_score"],ascending=True).reset_index(drop=True)
         cv_results['div'] = cv_results.mean_train_score / cv_results.mean_test_score
-        cv_results['ok'] = np.where((cv_results['mean_train_score'] <= 0.95) & (cv_results['div'] <= 1.3), 1, 0)
+        cv_results['ok'] = np.where((cv_results['mean_train_score'] <= 0.95) & (cv_results['mean_train_score'] - cv_results['mean_test_score'] <= 0.2) & (cv_results['div'] <= 1.3), 1, 0)
         cv_results.to_excel('artifacts/ml_results/{0}/{1} - Grid.xlsx'.format(self.label, model_name), index=False)
 
         if np.sum(cv_results['ok']) > 0:
@@ -242,10 +247,10 @@ class DataTranformTrain():
         return nbp
 
 
-    def calculate_and_save_metrics(self, final_pipeline, X, y, indices_train, val_df, model_name):
+    def calculate_and_save_metrics(self, final_pipeline, X, y, val_df, model_name):
         metric = evaluate_model_kpi(model=final_pipeline, 
-                                        X_train=X.iloc[indices_train], 
-                                        y_train=y.iloc[indices_train], 
+                                        X_train=X, 
+                                        y_train=y, 
                                         X_val=val_df, 
                                         y_val=val_df[self.label], 
                                         threshold=0.5,
@@ -253,7 +258,7 @@ class DataTranformTrain():
                                         )
         metric_long = metric.melt(id_vars=['Algorithm'], var_name='Metric', value_name='Metric value')
         metric_long.to_excel('artifacts/ml_results/{0}/{1} - Metrics.xlsx'.format(self.label, model_name), index=False)
-        print(metric_long[["Metric", "Metric value"]])
+        print(metric_long[["Metric", "Metric value"]].to_string(index=False))
         print("\n")
         
         return metric
@@ -287,9 +292,9 @@ class DataTranformTrain():
             fi = pd.DataFrame({
                 'Feature': feature_names,
                 'Coefficients': coefficients,
-                'Abs coefficients': np.abs(coefficients)
+                'Feature importance': np.abs(coefficients)
             })
-            fi = fi.sort_values('Abs coefficients', ascending=False).reset_index(drop=True)
+            fi = fi.sort_values('Feature importance', ascending=False).reset_index(drop=True)
         else:
             feature_importance = final_pipeline.named_steps['model'].feature_importances_
             fi = pd.DataFrame({
@@ -299,14 +304,16 @@ class DataTranformTrain():
             fi = fi.sort_values('Feature importance', ascending=False).reset_index(drop=True)
         fi.to_excel('artifacts/ml_results/{0}/{1} - Feature importance.xlsx'.format(self.label, model_name), index=False)
 
+        return feature_names, fi
+
 
     def grid_search(self, models, params, save_to_mlflow=True, random_grid=False, n_random_hyperparameters=10):
 
-        X, y, indices_train, indices_test, cv, preprocessor, val_df = self.adjust_train_test()
+        X, y, ps, preprocessor, val_df = self.adjust_train_test()
 
         mlflow.set_experiment(self.label)
 
-        print("- Hyperparameter-tuning and training best model for each algo: \n")
+        print("Hyperparameter-tuning and training best model for each algo: \n")
         algo_best_model = []
         all_algo_metrics = pd.DataFrame()
         for i in range(len(list(models))):
@@ -327,13 +334,12 @@ class DataTranformTrain():
                     grid = GridSearchCV(estimator = pipeline, param_grid = param, cv = 3, n_jobs = -1, scoring = 'roc_auc', error_score="raise", return_train_score=True, verbose=-1)
             else:
                 if random_grid:
-                    grid = RandomizedSearchCV(estimator = pipeline, param_distributions = param, n_iter=n_random_hyperparameters, cv = cv, scoring = 'roc_auc', error_score="raise", return_train_score=True, verbose=-1)
+                    grid = RandomizedSearchCV(estimator = pipeline, param_distributions = param, n_iter=n_random_hyperparameters, cv = ps, scoring = 'roc_auc', error_score="raise", return_train_score=True, verbose=-1)
                 else:
-                    grid = GridSearchCV(estimator = pipeline, param_grid = param, cv = cv, scoring = 'roc_auc', error_score="raise", return_train_score=True, verbose=-1)
-            
+                    grid = GridSearchCV(estimator = pipeline, param_grid = param, cv = ps, scoring = 'roc_auc', error_score="raise", return_train_score=True, verbose=-1)
+
             print("- Hyperparameter-tuning")
             grid.fit(X, y)
-
 
             print("- Select best hyperparameters")
             nbp = self.select_param_from_grid(grid=grid, model_name=list(models.keys())[i])
@@ -343,7 +349,7 @@ class DataTranformTrain():
                 ('preprocessing', preprocessor),
                 ('model', model.set_params(**nbp))
             ])
-            final_pipeline.fit(X.iloc[indices_train], y.iloc[indices_train])
+            final_pipeline.fit(X, y)
 
             # Save the pipeline to a file
             joblib.dump(final_pipeline, 'artifacts/ml_results/{0}/{1}.pkl'.format(self.label, list(models.keys())[i]))
@@ -351,12 +357,13 @@ class DataTranformTrain():
             algo_best_model.append((list(models.keys())[i], final_pipeline))        
 
             print("- Calculating metrics \n")
-            metric = self.calculate_and_save_metrics(final_pipeline, X, y, indices_train, val_df, model_name=list(models.keys())[i])
+            metric = self.calculate_and_save_metrics(final_pipeline, X, y, val_df, model_name=list(models.keys())[i])
             all_algo_metrics = pd.concat([all_algo_metrics, metric]).reset_index(drop=True)
 
-            print("- Collect feature importance \n")
-            self.collect_and_save_feature_importance(final_pipeline, model_name=list(models.keys())[i])
-            
+            print("- Collect feature importance")
+            feature_names, fi = self.collect_and_save_feature_importance(final_pipeline, model_name=list(models.keys())[i])
+            fi = fi.reset_index(drop=True)
+
             if save_to_mlflow:
                 timestamp = " " + str(pd.to_datetime('today'))
                 with mlflow.start_run(run_name=list(models.keys())[i] + timestamp):
@@ -367,11 +374,71 @@ class DataTranformTrain():
                     mlflow.log_params(final_pipeline.named_steps['model'].get_params())
                     mlflow.log_metric('auc train', metric['AUC-ROC Train'][0])
                     mlflow.log_metric('auc val', metric['AUC-ROC Val'][0])
+
+                    # Feature importance plot
+                    fi_plot = fi.head(20).sort_values('Feature importance', ascending=True)
+                    
+                    plt.figure(figsize=(15, 12))
+                    plt.rcParams.update({'font.size': 6})
+
+                    plt.barh(fi_plot['Feature'], fi_plot['Feature importance'])
+                    plt.xlabel('Feature Importance')
+                    plt.ylabel('Feature')
+                    plt.title('Feature Importance Chart (Top 20 features)')
+
+                    plt.savefig('artifacts/ml_results/{0}/{1}_feature_importance.png'.format(self.label, list(models.keys())[i]))
+                    mlflow.log_artifact('artifacts/ml_results/{0}/{1}_feature_importance.png'.format(self.label, list(models.keys())[i]))
+                    plt.close()
+
+                    # setup
+                    score = pd.read_csv(self.config.score_data_path)
+                    score = final_pipeline.named_steps["preprocessing"].transform(score)
+                    X_t = final_pipeline.named_steps["preprocessing"].transform(X)
+                    X_df = pd.DataFrame(X_t)
+                    X_df.columns = feature_names
+
+                    print("- Partial dependency")
+                    top_features = fi["Feature"][0:9].tolist()
+                    top_features_indices = [feature_names.index(element) for element in top_features]
+                    top_feature_names = [feature_names[i] for i in top_features_indices]
+
+                    fig, ax = plt.subplots(figsize=(15, 15))
+                    plt.rcParams.update({'font.size': 6})
+
+                    ax.set_title("Partial dependence")
+                    PartialDependenceDisplay.from_estimator(final_pipeline['model'], X_df, features=top_feature_names, ax=ax, kind="both", centered=True)
+                    
+                    plt.savefig("artifacts/ml_results/{0}/{1}_partial_dependence_plot.png".format(self.label, list(models.keys())[i]))
+                    plt.close(fig)
+                    mlflow.log_artifact("artifacts/ml_results/{0}/{1}_partial_dependence_plot.png".format(self.label, list(models.keys())[i]))
+
+                    # SHAP
+                    try:
+                        print("- Shap \n")
+                        if list(models.keys())[i] == "Logistic Regression":
+                            explainer = shap.KernelExplainer(final_pipeline.named_steps["model"].predict_proba, shap.kmeans(X_t, 10), silent=True)
+                        else:
+                            explainer = shap.TreeExplainer(final_pipeline.named_steps["model"])
+                        
+                        shap_values = explainer.shap_values(score)
+                        plt.rcParams.update({'font.size': 6})
+
+                        sv = shap_values[0] if len(shap_values) == 2 else shap_values
+                        shap.summary_plot(sv, score, show=False, feature_names=feature_names, plot_size=[16,6])
+
+                        plt.savefig("artifacts/ml_results/{0}/{1}_shap.png".format(self.label, list(models.keys())[i]))
+                        plt.close()
+
+                        mlflow.log_artifact("artifacts/ml_results/{0}/{1}_shap.png".format(self.label, list(models.keys())[i]))
+                    except: 
+                        print("- SHAP FAILED!")
+
+                    # Save model
                     mlflow.sklearn.log_model(final_pipeline, 'model')
 
                 mlflow.end_run()
 
-        all_algo_metrics.to_excel('artifacts/ml_results/{0}/all_algo_metrics.xlsx'.format(self.label), index=False)
+        all_algo_metrics.to_excel('artifacts/ml_results/{0}/{1}_shap.xlsx'.format(self.label, list(models.keys())[i]), index=False)
     
     
 if __name__=='__main__':

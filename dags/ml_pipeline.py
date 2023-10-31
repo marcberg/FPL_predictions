@@ -4,7 +4,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 
-from ml_pipeline_functions import get_data, transform_data, setup_train_models, train, score
+from .ml_pipeline_functions import get_data, transform_data, setup_train_models, train, score
 
 default_args = {
     'owner': 'Marcus Bergdahl',

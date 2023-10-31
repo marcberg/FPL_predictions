@@ -130,6 +130,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+notebook/
 
 # Spyder project settings
 .spyderproject
@@ -171,3 +172,4 @@ cython_debug/
 *.xlsx
 *.pkl
 *.png
+test*

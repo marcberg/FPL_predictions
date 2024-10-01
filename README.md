@@ -28,7 +28,7 @@ conda install ipykernel -y
 pip install -r requirements.txt
 ```
 
-## Docker
+## Run main with Docker
 
 Installed Docker https://www.docker.com/get-started
 
@@ -39,20 +39,6 @@ docker build -t fpl_main_image -f Dockerfile.main .
 docker run --name fpl_main_container fpl_main_image
 ```
 
-## airflow
-
-```
-docker compose up airflow-init
-
-docker compose up
-```
-
-open a new terminal to check it's up and running
-```
-docker ps
-```
-
-open webbrowser and go to localhost:8080
 
 ## Folder structure
 
@@ -63,47 +49,29 @@ FPL_predictions/
 │   ├─ fetched_data/
 │   └─ ml_result/
 │
-├─ dags/
+├─ src/
+│    ├─ components/
+│    │   ├─ data/
+│    │   │   ├─ api/
+│    │   │   └─ transform/
+│    │   └─ ml/
+│    ├─ pipeline.py
 │
-├─ notebook/
-│
-└─ src/
-    ├─ components/
-    │   ├─ data/
-    │   │   ├─ api/
-    │   │   └─ transform/
-    │   └─ ml/
+└─ main.py
 ```
-
-
-### FPL_predictions
-
-Includes main.py and main.ipynb. The later is used for testing main.
-There could be som test_*.ipynb files which have been used for testing. 
-
-Other files are Dockerfile, .gitignore, LICENSE and requirements.txt. 
-
 
 ### Artifacts
 
 - artifacts: Transformed data divided into train, test, validation and score. 
 - fetched_data: Fetched data by the API.
-- ml_results: Results (metrics, grid, feature importance) from the models from the latest run.  
-
-### dags
-
-My airflow dags. NOT WORKING RIGHT NOW.
-
-### notebook
-
-.ipynb-files used for EDA and testing and understanding of models. 
+- ml_results: Results (metrics, grid, feature importance, plots, .pkl) from the all algo's best models from the latest run.  
 
 
 ### src
 
 src includes all  functions used in the project.
 
-- src: utils.py, includes general function used all over the project. 
+- src: pipeline.py, creating the final function used in main.py
 - components: divide data function from ml functions.
 - data: has fetch_data.py from fetching data with API, and transform_data which transformed the fetched data.
 - api: .py-files with functions used for fetching the data. Divided in to categories.
@@ -114,13 +82,13 @@ src includes all  functions used in the project.
 ## To do-list
 
 - Improve the training-part.
-    - Feature selection
+    - Feature selection.
         - Is "season" not in it?
         - No games-features are selected?
-    - Interactions
-    - Hyperparameters grid
-    - Split up functions into multiple functions
+    - Interactions.
+    - Hyperparameters grid.
+    - Split up functions into multiple functions.
 - Document code and functions.
 - Build airflow-flow just to learn airflow.
-- Improve prints (incl. removing warnings)
-- Run & debug
+- Improve prints (incl. removing warnings).
+- Run & debug.

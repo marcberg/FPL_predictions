@@ -46,6 +46,7 @@ def fetch_data(fetching_function,
     season_data.to_csv('artifacts/fetched_data/' + fetching_function.__name__ + '.csv', index=False)
     print('data/' + fetching_function.__name__ + '.csv is fetched.')
 
+
 if __name__=="__main__":
     fetch_data(get_game_list, id_list = ["id","team_h","team_a","season_start_year"])
     fetch_data(get_player_details, id_list = ["season_start_year","element","fixture"])

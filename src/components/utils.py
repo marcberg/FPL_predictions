@@ -1,0 +1,1 @@
+# Here we will write general function.
